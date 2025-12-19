@@ -35,3 +35,29 @@ class Game(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class GameRole(models.Model):
+    name = models.CharField(max_length=50)
+    icon_class = models.CharField(
+        max_length=50,
+        blank=True
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    order = models.PositiveIntegerField(default=1)
+
+    game = models.ForeignKey(
+        Game,
+        on_delete=models.CASCADE,
+        related_name="roles"
+    )
+
+    class Meta:
+        ordering = ["game", "order"]
+        constraints = [
+            models.UniqueConstraint(fields=["game", "name"], name="unique_game_roles")
+        ]
+
+    def __str__(self):
+        return f"{self.game.title} - {self.name}"

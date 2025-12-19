@@ -14,6 +14,13 @@ class User(AbstractUser):
     steam_url = models.URLField(blank=True)
     reputation = models.IntegerField(default=0)
 
+    games = models.ManyToManyField(
+        "games.Game",
+        through="games.UserGameProfile",
+        related_name="players",
+        blank=True
+    )
+
     class Meta:
         ordering = ["-date_joined"]
 

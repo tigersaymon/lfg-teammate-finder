@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 
@@ -61,3 +62,43 @@ class GameRole(models.Model):
 
     def __str__(self):
         return f"{self.game.title} - {self.name}"
+
+
+class UserGameProfile(models.Model):
+    rank = models.CharField(
+        max_length=50,
+        blank=True
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="game_profiles"
+    )
+
+    game = models.ForeignKey(
+        Game,
+        on_delete=models.CASCADE,
+        related_name="user_profiles"
+    )
+
+    main_role = models.ForeignKey(
+        GameRole,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="main_user_role"
+    )
+
+    class Meta:
+        verbose_name = "Game Profile"
+        ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(fields=["user", "game"], name="unique_user_profiles")
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} in {self.game.title}"

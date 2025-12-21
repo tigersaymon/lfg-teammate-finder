@@ -1,41 +1,68 @@
-<li id="slot-{{ slot.id }}" class="list-group-item d-flex justify-content-between align-items-center">
-  <div>
-    <strong>Slot {{ slot.order }}:</strong>
+<div
+    class="list-group-item d-flex justify-content-between align-items-center {% if not slot.player %}bg-light text-muted{% endif %}">
+
+  <div class="d-flex align-items-center gap-3">
+    <div class="fw-bold text-secondary">#{{ slot.order }}</div>
+
     {% if slot.player %}
-      <span class="text-success fw-bold">{{ slot.player.username }}</span>
-      <span class="badge bg-secondary">{{ slot.role_name }}</span>
+      <div class="d-flex align-items-center">
+        {% if slot.player.avatar %}
+          <img src="{{ slot.player.avatar.url }}" class="rounded-circle me-2" width="32" height="32">
+        {% else %}
+          <i class="bi bi-person-circle fs-4 me-2"></i>
+        {% endif %}
+
+        <div>
+          <strong>{{ slot.player.username }}</strong>
+
+          {% if profile %}
+            <span class="badge bg-primary ms-1">{{ profile.rank }}</span>
+            {% if profile.main_role %}
+              <span class="badge bg-secondary ms-1" title="Main Role">
+                                {% if profile.main_role.icon_class %}
+                                  <i class="{{ profile.main_role.icon_class }}"></i>
+                                {% endif %}
+                {{ profile.main_role.name }}
+                            </span>
+            {% endif %}
+          {% else %}
+            <span class="badge bg-warning text-dark ms-1">No Profile</span>
+          {% endif %}
+
+          {% if slot.player == user %}
+            <span class="badge bg-info ms-1">You</span>
+          {% endif %}
+        </div>
+      </div>
+
     {% else %}
-      <span class="text-muted">Empty</span>
-      <span class="badge bg-light text-dark border">{{ slot.role_name }}</span>
+      <div class="d-flex align-items-center">
+        <i class="bi bi-dash-circle me-2"></i>
+        <span>Empty Slot</span>
+      </div>
     {% endif %}
   </div>
 
-  <div>
+  <div class="text-end">
     {% if not slot.player %}
       {% if user.is_authenticated %}
-        <button
-            hx-post="{% url 'lobbies:lobby-join' lobby.game.slug lobby.invite_link slot.id %}"
-            hx-target="#slot-{{ slot.id }}"
-            hx-swap="outerHTML"
-            class="btn btn-sm btn-outline-primary">
+        <button class="btn btn-sm btn-success"
+                hx-post="{% url 'lobbies:lobby-join' lobby.game.slug lobby.invite_link slot.id %}"
+                hx-swap="outerHTML"
+                hx-target="closest .list-group-item">
           Join
         </button>
-      {% else %}
-        <small><a href="{% url 'login' %}">Login</a></small>
       {% endif %}
+    {% else %}
 
-    {% elif slot.player == user %}
-      {% if lobby.host == user %}
-        <span class="badge bg-warning text-dark">Host</span>
-      {% else %}
-        <button
-            hx-post="{% url 'lobbies:lobby-leave' lobby.game.slug lobby.invite_link slot.id %}"
-            hx-target="#slot-{{ slot.id }}"
-            hx-swap="outerHTML"
-            class="btn btn-sm btn-outline-danger">
+      {% if user == slot.player %}
+        <button class="btn btn-sm btn-outline-warning"
+                hx-post="{% url 'lobbies:lobby-leave' lobby.game.slug lobby.invite_link slot.id %}"
+                hx-swap="outerHTML"
+                hx-target="closest .list-group-item">
           Leave
         </button>
       {% endif %}
     {% endif %}
   </div>
-</li>
+</div>

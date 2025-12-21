@@ -84,6 +84,19 @@ class LobbyCreateView(LoginRequiredMixin, generic.CreateView):
     def get_success_url(self):
         return reverse("lobbies:lobby-list", kwargs={"game_slug": self.game.slug})
 
+    def dispatch(self, request, *args, **kwargs):
+        game_slug = self.kwargs.get("game_slug")
+        game = get_object_or_404(Game, slug=game_slug)
+
+        if request.user.is_authenticated and not request.user.game_profiles.filter(game=game).exists():
+            messages.warning(
+                request,
+                f"You need to set up your <b>{game.title}</b> profile before creating a lobby."
+            )
+            return redirect("games:profile-create")
+
+        return super().dispatch(request, *args, **kwargs)
+
 
 class LobbyDetailView(generic.DetailView):
     model = Lobby

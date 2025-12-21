@@ -1,33 +1,50 @@
 {% extends "base.html" %}
-
-{% block content %}
-<div class="d-flex justify-content-between align-items-start">
+{% load game_extras %} {% block content %}
+  <div class="d-flex justify-content-between align-items-start mb-4">
     <div>
-        <h1>{{ lobby.title }}</h1>
-        <p class="text-muted">Game: {{ lobby.game.title }} | Host: {{ lobby.host.username }}</p>
+      <h1>{{ lobby.title }}</h1>
+      <div class="text-muted">
+        <span class="badge bg-secondary">{{ lobby.game.title }}</span>
+        <span class="mx-2">|</span>
+        <i class="bi bi-person-fill"></i> Host: <strong>{{ lobby.host.username }}</strong>
+      </div>
     </div>
 
     {% if user == lobby.host %}
-        <a href="{% url 'lobbies:lobby-delete' lobby.game.slug lobby.invite_link %}" class="btn btn-outline-danger">
-            <i class="bi bi-trash"></i> Delete Lobby
-        </a>
+      <a href="{% url 'lobbies:lobby-delete' lobby.game.slug lobby.invite_link %}" class="btn btn-outline-danger">
+        <i class="bi bi-trash"></i> Delete Lobby
+      </a>
     {% endif %}
-</div>
-  <p>Description: {{ lobby.description }}</p>
+  </div>
 
+  <div class="card mb-4">
+    <div class="card-body">
+      <h5 class="card-title">Description</h5>
+      <p class="card-text">{{ lobby.description|default:"No description provided." }}</p>
+    </div>
+  </div>
 
   <hr>
 
-  <h3>Slots ({{ lobby.filled_count }}/{{ lobby.size }})</h3>
+  <h3>Slots ({{ lobby.filled_slots_count }}/{{ lobby.size }})</h3>
 
-  <ul class="list-group">
+<div class="list-group">
     {% for slot in lobby.slots.all %}
-      {% include "lobbies/partials/slot_card.html" %}
+
+        {% if slot.player %}
+            {% get_player_profile slot.player lobby.game as player_profile %}
+            {% include "lobbies/partials/slot_card.html" with slot=slot profile=player_profile %}
+        {% else %}
+            {% include "lobbies/partials/slot_card.html" with slot=slot profile=None %}
+        {% endif %}
+
     {% endfor %}
-  </ul>
+</div>
 
-  <script src="https://unpkg.com/htmx.org@1.9.6"></script>
-
-  <a href="{% url 'lobbies:lobby-list' lobby.game.slug %}">Back to Lobby List</a>
+  <div class="mt-4">
+    <a href="{% url 'lobbies:lobby-list' lobby.game.slug %}" class="btn btn-outline-secondary">
+      <i class="bi bi-arrow-left"></i> Back to Lobby List
+    </a>
+  </div>
 
 {% endblock %}

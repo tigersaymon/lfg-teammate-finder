@@ -1,0 +1,30 @@
+<li id="slot-{{ slot.id }}" class="list-group-item d-flex justify-content-between align-items-center">
+  <div>
+      <strong>Slot {{ slot.order }}:</strong>
+      {% if slot.player %}
+          <span class="text-success fw-bold">{{ slot.player.username }}</span>
+          <span class="badge bg-secondary">{{ slot.role_name }}</span>
+      {% else %}
+          <span class="text-muted">Empty</span>
+          <span class="badge bg-light text-dark border">{{ slot.role_name }}</span>
+      {% endif %}
+  </div>
+
+  <div>
+    {% if not slot.player %}
+        {% if user.is_authenticated %}
+            <button
+                hx-post="{% url 'lobbies:lobby-join' lobby.game.slug lobby.invite_link slot.id %}"
+                hx-target="#slot-{{ slot.id }}"
+                hx-swap="outerHTML"
+                class="btn btn-sm btn-outline-primary">
+                Join
+            </button>
+        {% else %}
+            <small><a href="/accounts/login/">Login</a></small>
+        {% endif %}
+    {% elif slot.player == user %}
+        <span class="badge bg-primary">It's you!</span>
+    {% endif %}
+  </div>
+</li>

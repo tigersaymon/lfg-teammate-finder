@@ -1,12 +1,15 @@
+from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db import transaction
 from django.db.models import Count, Q, F
-from django.shortcuts import render, get_object_or_404
+from django.http import HttpResponse
+from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
-from django.views import generic
+from django.views import generic, View
 
 from games.models import Game
 from lobbies.forms import LobbyForm
-from lobbies.models import Lobby
+from lobbies.models import Lobby, Slot
 
 
 class LobbyListView(generic.ListView):
@@ -85,3 +88,53 @@ class LobbyDetailView(generic.DetailView):
             "slots__player",
             "slots__required_role"
         )
+
+
+class JoinSlotView(LoginRequiredMixin, View):
+    def post(self, request, game_slug, invite_link, slot_id):
+        with transaction.atomic():
+            slot = get_object_or_404(
+                Slot.objects.select_for_update().select_related('lobby', 'lobby__game'),
+                id=slot_id,
+                lobby__invite_link=invite_link
+            )
+            lobby = slot.lobby
+
+            can_join, reason = lobby.can_join(request.user)
+            if not can_join:
+                return self._handle_error(request, reason, game_slug, invite_link)
+
+            if not slot.is_available:
+                return self._handle_error(request, "This slot is already taken", game_slug, invite_link)
+
+            slot.player = request.user
+            slot.save()
+
+            messages.success(request, f"You joined as {slot.role_name}!")
+
+            if request.headers.get("HX-Request"):
+                context = {
+                    "slot": slot,
+                    "lobby": lobby,
+                    "user": request.user
+                }
+                return render(request, "lobbies/partials/slot_card.html", context=context)
+
+        return self._handle_redirect(request, game_slug, invite_link)
+
+    def _handle_error(self, request, message, game_slug, invite_link):
+        messages.error(request, message)
+
+        if request.headers.get("HX-Request"):
+            response = HttpResponse(status=200)
+            target_url = reverse("lobbies:lobby-detail", kwargs={
+                "game_slug": game_slug,
+                "invite_link": invite_link
+            })
+            response["HX-Redirect"] = target_url
+            return response
+
+        return self._handle_redirect(request, game_slug, invite_link)
+
+    def _handle_redirect(self, request, game_slug, invite_link):
+        return redirect("lobbies:lobby-detail", game_slug=game_slug, invite_link=invite_link)

@@ -164,6 +164,17 @@ class JoinSlotView(LoginRequiredMixin, SlotActionMixin, View):
             slot = self._get_locked_slot(slot_id, invite_link)
             lobby = slot.lobby
 
+            if not request.user.game_profiles.filter(game=lobby.game).exists():
+                error_msg = f"You need a {lobby.game.title} profile to join!"
+                messages.warning(request, error_msg)
+
+                if request.headers.get("HX-Request"):
+                    response = HttpResponse(status=204)
+                    response["HX-Redirect"] = reverse("games:profile-create")
+                    return response
+
+                return redirect("games:profile-create")
+
             can_join, reason = lobby.can_join(request.user)
             if not can_join:
                 return self._handle_error(request, reason, game_slug, invite_link)
@@ -179,12 +190,15 @@ class JoinSlotView(LoginRequiredMixin, SlotActionMixin, View):
             messages.success(request, f"You joined as {slot.role_name}!")
 
             if request.headers.get("HX-Request"):
-                if request.headers.get("HX-Request"):
-                    return render(request, "lobbies/partials/slot_card.html", {
-                        "slot": slot,
-                        "lobby": lobby,
-                        "user": request.user
-                    })
+
+                player_profile = request.user.game_profiles.filter(game=lobby.game).first()
+
+                return render(request, "lobbies/partials/slot_card.html", {
+                    "slot": slot,
+                    "lobby": lobby,
+                    "user": request.user,
+                    "profile": player_profile
+                })
 
         return self._redirect_to_lobby(game_slug, invite_link)
 

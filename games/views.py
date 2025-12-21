@@ -48,3 +48,31 @@ class GameProfileCreateView(LoginRequiredMixin, generic.CreateView):
         form.instance.user = self.request.user
         return super().form_valid(form)
 
+
+class GameProfileUpdateView(LoginRequiredMixin, generic.UpdateView):
+    model = UserGameProfile
+    form_class = UserGameProfileForm
+    template_name = "games/profile_form.html"
+    success_url = reverse_lazy("games:my-profiles")
+
+    def get_object(self, queryset=None):
+        game_slug = self.kwargs.get("game_slug")
+        return get_object_or_404(
+            UserGameProfile,
+            user=self.request.user,
+            game__slug=game_slug
+        )
+
+
+class GameProfileDeleteView(LoginRequiredMixin, generic.DeleteView):
+    model = UserGameProfile
+    template_name = "games/profile_confirm_delete.html"
+    success_url = reverse_lazy("games:my-profiles")
+
+    def get_object(self, queryset=None):
+        game_slug = self.kwargs.get("game_slug")
+        return get_object_or_404(
+            UserGameProfile,
+            user=self.request.user,
+            game__slug=game_slug
+        )

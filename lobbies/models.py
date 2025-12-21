@@ -15,7 +15,7 @@ class Lobby(models.Model):
 
     status = models.CharField(
         max_length=2,
-        choices=Status,
+        choices=Status.choices,
         default=Status.SEARCHING,
     )
 

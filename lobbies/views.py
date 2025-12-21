@@ -138,3 +138,40 @@ class JoinSlotView(LoginRequiredMixin, View):
 
     def _handle_redirect(self, request, game_slug, invite_link):
         return redirect("lobbies:lobby-detail", game_slug=game_slug, invite_link=invite_link)
+
+
+class LeaveSlotView(LoginRequiredMixin, View):
+    def post(self, request, game_slug, invite_link, slot_id):
+        with transaction.atomic():
+            slot = get_object_or_404(
+                Slot.objects.select_for_update().select_related("lobby"),
+                id=slot_id,
+                lobby__invite_link=invite_link
+            )
+            lobby = slot.lobby
+
+            if slot.player != request.user:
+                messages.error(request, "You cannot leave a slot that isn't yours.")
+                return self._handle_redirect(request, game_slug, invite_link)
+
+            if lobby.host == request.user:
+                messages.error(request, "The host cannot leave. You must delete the lobby.")
+                return self._handle_redirect(request, game_slug, invite_link)
+
+            slot.player = None
+            slot.save()
+
+            messages.success(request, "You have left the lobby.")
+
+            if request.headers.get("HX-Request"):
+                return render(request, "lobbies/partials/slot_card.html", {
+                    "slot": slot,
+                    "lobby": lobby,
+                    "user": request.user
+                })
+
+        return self._handle_redirect(request, game_slug, invite_link)
+
+    def _handle_redirect(self, request, game_slug, invite_link):
+        return redirect("lobbies:lobby-detail", game_slug=game_slug, invite_link=invite_link)
+

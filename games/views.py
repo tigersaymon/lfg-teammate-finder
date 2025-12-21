@@ -22,3 +22,12 @@ class GetGameRolesView(View):
             roles = GameRole.objects.filter(game_id=game_id).order_by("order")
 
         return render(request, "games/partials/role_options.html", {"roles": roles})
+
+
+class MyGameProfilesListView(LoginRequiredMixin, generic.ListView):
+    model = UserGameProfile
+    template_name = "games/profile_list.html"
+    context_object_name = "profiles"
+
+    def get_queryset(self):
+        return self.request.user.game_profiles.select_related("game", "main_role").order_by("-created_at")

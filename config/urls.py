@@ -7,8 +7,9 @@ from django.urls import path, include
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("accounts/", include("django.contrib.auth.urls")),
-    path("", include("games.urls")),
-    path("lobbies/", include("lobbies.urls")),
+    path("users/", include("users.urls", namespace="users")),
+    path("", include("games.urls", namespace="games")),
+    path("lobbies/", include("lobbies.urls", namespace="lobbies")),
 ] + debug_toolbar_urls()
 
 if settings.DEBUG:

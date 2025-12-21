@@ -1,9 +1,20 @@
 {% extends "base.html" %}
 
 {% block content %}
-  <h1>{{ lobby.title }}</h1>
-  <p>Game: {{ lobby.game.title }} | Host: {{ lobby.host.username }}</p>
+<div class="d-flex justify-content-between align-items-start">
+    <div>
+        <h1>{{ lobby.title }}</h1>
+        <p class="text-muted">Game: {{ lobby.game.title }} | Host: {{ lobby.host.username }}</p>
+    </div>
+
+    {% if user == lobby.host %}
+        <a href="{% url 'lobbies:lobby-delete' lobby.game.slug lobby.invite_link %}" class="btn btn-outline-danger">
+            <i class="bi bi-trash"></i> Delete Lobby
+        </a>
+    {% endif %}
+</div>
   <p>Description: {{ lobby.description }}</p>
+
 
   <hr>
 

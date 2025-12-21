@@ -1,10 +1,10 @@
 from django.contrib import messages
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db import transaction
 from django.db.models import Count, Q, F
 from django.http import HttpResponse
 from django.shortcuts import render, get_object_or_404, redirect
-from django.urls import reverse
+from django.urls import reverse, reverse_lazy
 from django.views import generic, View
 
 from games.models import Game
@@ -88,6 +88,20 @@ class LobbyDetailView(generic.DetailView):
             "slots__player",
             "slots__required_role"
         )
+
+
+class LobbyDeleteView(LoginRequiredMixin, UserPassesTestMixin, generic.DeleteView):
+    model = Lobby
+    template_name = "lobbies/lobby_confirm_delete.html"
+    slug_url_kwarg = "invite_link"
+    slug_field = "invite_link"
+
+    def test_func(self):
+        lobby = self.get_object()
+        return lobby.host == self.request.user
+
+    def get_success_url(self):
+        return reverse_lazy("lobbies:lobby-list", kwargs={"game_slug": self.kwargs["game_slug"]})
 
 
 class JoinSlotView(LoginRequiredMixin, View):
@@ -174,4 +188,3 @@ class LeaveSlotView(LoginRequiredMixin, View):
 
     def _handle_redirect(self, request, game_slug, invite_link):
         return redirect("lobbies:lobby-detail", game_slug=game_slug, invite_link=invite_link)
-

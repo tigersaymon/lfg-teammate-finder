@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <div class="row justify-content-center mt-5">
+    <div class="col-md-6">
+      <div class="card border-danger">
+        <div class="card-header bg-danger text-white">
+          <h4 class="mb-0"><i class="bi bi-exclamation-triangle-fill"></i> Delete Lobby?</h4>
+        </div>
+        <div class="card-body text-center">
+          <p class="lead">Are you sure you want to delete <strong>"{{ lobby.title }}"</strong>?</p>
+          <p class="text-muted">This action cannot be undone. All players will be kicked.</p>
+
+          <form method="post">
+            {% csrf_token %}
+            <div class="d-flex justify-content-center gap-3 mt-4">
+              <a href="{% url 'lobbies:lobby-detail' lobby.game.slug lobby.invite_link %}" class="btn btn-secondary">
+                Cancel
+              </a>
+              <button type="submit" class="btn btn-danger">Yes, Delete Lobby</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

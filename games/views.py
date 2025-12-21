@@ -31,3 +31,20 @@ class MyGameProfilesListView(LoginRequiredMixin, generic.ListView):
 
     def get_queryset(self):
         return self.request.user.game_profiles.select_related("game", "main_role").order_by("-created_at")
+
+
+class GameProfileCreateView(LoginRequiredMixin, generic.CreateView):
+    model = UserGameProfile
+    form_class = UserGameProfileForm
+    template_name = "games/profile_form.html"
+    success_url = reverse_lazy("games:my-profiles")
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["user"] = self.request.user
+        return kwargs
+
+    def form_valid(self, form):
+        form.instance.user = self.request.user
+        return super().form_valid(form)
+

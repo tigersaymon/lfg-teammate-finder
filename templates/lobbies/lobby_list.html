@@ -1,37 +1,38 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
     <h1>Lobbies for <span class="text-primary">{{ game.title }}</span></h1>
-    <a href="#" class="btn btn-success">
-        <i class="bi bi-plus-lg"></i> Create Lobby
+    <a href="{% url 'lobbies:lobby-create' game.slug %}" class="btn btn-success">
+      <i class="bi bi-plus-lg"></i> Create Lobby
     </a>
-</div>
+  </div>
 
-<div class="list-group">
+  <div class="list-group">
     {% for lobby in lobbies %}
-        <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" aria-current="true">
-            <div>
-                <div class="d-flex w-100 justify-content-between">
-                    <h5 class="mb-1">{{ lobby.title }}</h5>
-                </div>
-                <p class="mb-1 text-secondary small">
-                    Host: {{ lobby.host.username }} | {{ lobby.get_status_display }}
-                </p>
-            </div>
+      <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+         aria-current="true">
+        <div>
+          <div class="d-flex w-100 justify-content-between">
+            <h5 class="mb-1">{{ lobby.title }}</h5>
+          </div>
+          <p class="mb-1 text-secondary small">
+            Host: {{ lobby.host.username }} | {{ lobby.get_status_display }}
+          </p>
+        </div>
 
-            <div class="text-end">
+        <div class="text-end">
                 <span class="badge bg-primary rounded-pill">
                     {{ lobby.filled_count }} / {{ lobby.size }} Players
                 </span>
-                <small class="d-block text-muted mt-1">{{ lobby.created_at|timesince }} ago</small>
-            </div>
-        </a>
-    {% empty %}
-        <div class="text-center py-5">
-            <h3>No active lobbies found 😢</h3>
-            <p>Be the first one to create a lobby!</p>
+          <small class="d-block text-muted mt-1">{{ lobby.created_at|timesince }} ago</small>
         </div>
+      </a>
+    {% empty %}
+      <div class="text-center py-5">
+        <h3>No active lobbies found 😢</h3>
+        <p>Be the first one to create a lobby!</p>
+      </div>
     {% endfor %}
-</div>
+  </div>
 {% endblock %}

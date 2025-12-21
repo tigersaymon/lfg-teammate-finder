@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}Create Lobby | {{ game.title }}{% endblock %}
+
+{% block content %}
+  <div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+
+      <div class="card shadow-lg border-0 bg-dark text-white">
+        <div class="card-header bg-primary text-white text-center py-3">
+          <h3 class="mb-0 fw-bold">
+            <i class="bi bi-plus-circle-dotted me-2"></i>Create Lobby
+          </h3>
+          <small class="text-white-50">for {{ game.title }}</small>
+        </div>
+
+        <div class="card-body p-4">
+          <form method="post">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+              <div class="alert alert-danger">
+                {{ form.non_field_errors }}
+              </div>
+            {% endif %}
+
+            {% for field in form %}
+              <div class="mb-3">
+                <label for="{{ field.id_for_label }}" class="form-label fw-semibold">
+                  {{ field.label }}
+                  {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+                </label>
+
+                {{ field }}
+
+                {% if field.help_text %}
+                  <div class="form-text text-light opacity-50">{{ field.help_text }}</div>
+                {% endif %}
+
+                {% if field.errors %}
+                  <div class="text-danger small mt-1">
+                    {{ field.errors.0 }}
+                  </div>
+                {% endif %}
+              </div>
+            {% endfor %}
+
+            <div class="d-grid gap-2 mt-4">
+              <button type="submit" class="btn btn-success btn-lg">
+                <i class="bi bi-check-lg"></i> Publish Lobby
+              </button>
+              <a href="{% url 'lobbies:lobby-list' game.slug %}" class="btn btn-outline-secondary">
+                Cancel
+              </a>
+            </div>
+          </form>
+        </div>
+      </div>
+
+    </div>
+  </div>
+{% endblock %}

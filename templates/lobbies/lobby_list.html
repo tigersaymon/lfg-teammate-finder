@@ -10,7 +10,7 @@
 
   <div class="list-group">
     {% for lobby in lobbies %}
-      <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+      <a href="{% url 'lobbies:lobby-detail' game.slug lobby.invite_link %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
          aria-current="true">
         <div>
           <div class="d-flex w-100 justify-content-between">

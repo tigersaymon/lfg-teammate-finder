@@ -69,3 +69,19 @@ class LobbyCreateView(LoginRequiredMixin, generic.CreateView):
 
     def get_success_url(self):
         return reverse("lobbies:lobby-list", kwargs={"game_slug": self.game.slug})
+
+
+class LobbyDetailView(generic.DetailView):
+    model = Lobby
+    context_object_name = "lobby"
+
+    slug_url_kwarg = "invite_link"
+    slug_field = "invite_link"
+
+    def get_queryset(self):
+        return Lobby.objects.select_related(
+            "game", "host"
+        ).prefetch_related(
+            "slots__player",
+            "slots__required_role"
+        )

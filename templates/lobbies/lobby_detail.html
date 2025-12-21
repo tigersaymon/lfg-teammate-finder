@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h1>{{ lobby.title }}</h1>
+  <p>Game: {{ lobby.game.title }} | Host: {{ lobby.host.username }}</p>
+  <p>Description: {{ lobby.description }}</p>
+  
+  <hr>
+
+  <h3>Slots ({{ lobby.filled_count }}/{{ lobby.size }})</h3>
+
+  <ul>
+    {% for slot in lobby.slots.all %}
+      <li>
+        <strong>Slot {{ slot.order }}:</strong>
+        
+        {% if slot.player %}
+          <span>{{ slot.player.username }}</span>
+          <span>(Role: {{ slot.role_name }})</span>
+        {% else %}
+          <span>Empty</span>
+          <span>(Required: {{ slot.role_name }})</span>
+          <button>Join</button>
+        {% endif %}
+      </li>
+    {% endfor %}
+  </ul>
+
+  <br>
+  <a href="{% url 'lobbies:lobby-list' lobby.game.slug %}">Back to Lobby List</a>
+
+{% endblock %}

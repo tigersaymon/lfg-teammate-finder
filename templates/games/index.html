@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <div class="text-center mb-5">
+    <h1 class="display-4 fw-bold">Find your team!</h1>
+    <p class="lead text-secondary">Choose a game and join the lobby in seconds</p>
+  </div>
+
+  <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-4">
+    {% for game in games %}
+      <div class="col">
+        <div class="card h-100 bg-secondary-subtle border-0 game-card">
+          {% if game.icon %}
+            <img src="{{ game.icon.url }}" class="card-img-top" alt="{{ game.title }}"
+                 style="height: 300px; object-fit: cover;">
+          {% else %}
+            <div class="d-flex align-items-center justify-content-center bg-dark text-white" style="height: 200px;">
+              <i class="bi bi-controller fs-1"></i>
+            </div>
+          {% endif %}
+
+          <div class="card-body text-center">
+            <h5 class="card-title fw-bold">{{ game.title }}</h5>
+            <p class="card-text text-muted small">5v5 • Team Play</p>
+            <a href="#" class="btn btn-primary w-100 stretched-link">Find the lobby</a>
+          </div>
+        </div>
+      </div>
+    {% empty %}
+      <div class="col-12 text-center">
+        <p>No available games!</p>
+      </div>
+    {% endfor %}
+  </div>
+{% endblock %}

@@ -8,12 +8,14 @@
           <div class="list-group-item disabled text-uppercase small fw-bold text-muted">
             Settings
           </div>
-          <a href="#" class="list-group-item list-group-item-action">
+
+          <a href="{% url 'settings-general' %}"
+             class="list-group-item list-group-item-action {% if request.resolver_match.view_name == 'users:settings-general' %}active{% endif %}">
             <i class="bi bi-person-gear me-2"></i> General Profile
           </a>
 
           <a href="{% url 'games:my-profiles' %}"
-             class="list-group-item list-group-item-action {% if 'my-profiles' in request.path %}active{% endif %}">
+             class="list-group-item list-group-item-action {% if 'games' in request.path %}active{% endif %}">
             <i class="bi bi-controller me-2"></i> Game Profiles
           </a>
 

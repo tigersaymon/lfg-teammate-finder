@@ -19,3 +19,25 @@ class SignUpForm(UserCreationForm):
             raise forms.ValidationError("Email already exists")
 
         return email
+
+
+class UserSettingsForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ["avatar", "username", "email", "bio", "discord_tag", "steam_url"]
+        widgets = {
+            "username": forms.TextInput(attrs={"class": "form-control"}),
+            "email": forms.EmailInput(attrs={"class": "form-control"}),
+            "bio": forms.Textarea(attrs={"class": "form-control", "rows": 4}),
+            "discord_tag": forms.TextInput(attrs={"class": "form-control", "placeholder": "username#1234"}),
+            "steam_url": forms.URLInput(attrs={"class": "form-control", "placeholder": "https://steamcommunity.com/id/..."}),
+            "avatar": forms.FileInput(attrs={"class": "form-control"}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        if "email" in self.fields:
+            self.fields["email"].disabled = True
+            self.fields["email"].widget.attrs["class"] += " bg-light text-muted"
+            self.fields["email"].help_text = "Email cannot be changed."

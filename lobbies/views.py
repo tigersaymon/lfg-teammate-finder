@@ -38,7 +38,7 @@ class LobbyListView(generic.ListView):
         ).prefetch_related(
             "slots__player",
             "slots__required_role"
-        )
+        ).order_by('-created_at')
 
         if self.request.GET.get("available_only"):
             queryset = queryset.filter(filled_slots_count__lt=F("size"))

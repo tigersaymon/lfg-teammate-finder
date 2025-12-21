@@ -12,6 +12,13 @@ from lobbies.forms import LobbyForm
 from lobbies.models import Lobby, Slot
 
 
+class HTMXRedirect(HttpResponse):
+    def __init__(self, redirect_to, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self["HX-Redirect"] = redirect_to
+        self.status_code = 200
+
+
 class LobbyListView(generic.ListView):
     model = Lobby
     context_object_name = "lobbies"
@@ -24,12 +31,17 @@ class LobbyListView(generic.ListView):
         queryset = Lobby.objects.filter(
             game=self.game,
             status=Lobby.Status.SEARCHING
-        ).select_related("host", "game").prefetch_related("slots")
+        ).select_related(
+            "host", "game"
+        ).annotate(
+            filled_slots_count=Count("slots", filter=Q(slots__player__isnull=False))
+        ).prefetch_related(
+            "slots__player",
+            "slots__required_role"
+        )
 
         if self.request.GET.get("available_only"):
-            queryset = queryset.annotate(
-                filled_slots_count=Count("slots", filter=Q(slots__player__isnull=False))
-            ).filter(filled_slots_count__lt=F("size"))
+            queryset = queryset.filter(filled_slots_count__lt=F("size"))
 
         return queryset
 
@@ -60,13 +72,12 @@ class LobbyCreateView(LoginRequiredMixin, generic.CreateView):
         form.instance.host = self.request.user
         form.instance.game = self.game
 
-        self.object = form.save()
-        host_role = form.cleaned_data.get("host_role")
-        if host_role:
-            first_slot = self.object.slots.filter(order=1).first()
-            if first_slot:
-                first_slot.required_role = host_role
-                first_slot.save()
+        with transaction.atomic():
+            self.object = form.save()
+
+            host_role = form.cleaned_data.get("host_role")
+            if host_role:
+                self.object.slots.filter(order=1).update(required_role=host_role)
 
         return super().form_valid(form)
 
@@ -77,7 +88,6 @@ class LobbyCreateView(LoginRequiredMixin, generic.CreateView):
 class LobbyDetailView(generic.DetailView):
     model = Lobby
     context_object_name = "lobby"
-
     slug_url_kwarg = "invite_link"
     slug_field = "invite_link"
 
@@ -96,22 +106,49 @@ class LobbyDeleteView(LoginRequiredMixin, UserPassesTestMixin, generic.DeleteVie
     slug_url_kwarg = "invite_link"
     slug_field = "invite_link"
 
+    def get_object(self, queryset=None):
+        if not hasattr(self, "_cached_object"):
+            self._cached_object = super().get_object(queryset)
+        return self._cached_object
+
     def test_func(self):
-        lobby = self.get_object()
-        return lobby.host == self.request.user
+        return self.get_object().host == self.request.user
 
     def get_success_url(self):
-        return reverse_lazy("lobbies:lobby-list", kwargs={"game_slug": self.kwargs["game_slug"]})
+        return reverse_lazy(
+            "lobbies:lobby-list",
+            kwargs={"game_slug": self.get_object().game.slug}
+        )
 
 
-class JoinSlotView(LoginRequiredMixin, View):
+class SlotActionMixin:
+    def _get_locked_slot(self, slot_id, invite_link):
+        return get_object_or_404(
+            Slot.objects.select_for_update().select_related('lobby'),
+            id=slot_id,
+            lobby__invite_link=invite_link
+        )
+
+    def _redirect_to_lobby(self, game_slug, invite_link):
+        return redirect("lobbies:lobby-detail", game_slug=game_slug, invite_link=invite_link)
+
+    def _handle_error(self, request, message, game_slug, invite_link):
+        messages.error(request, message)
+
+        if request.headers.get("HX-Request"):
+            target_url = reverse("lobbies:lobby-detail", kwargs={
+                "game_slug": game_slug,
+                "invite_link": invite_link
+            })
+            return HTMXRedirect(target_url)
+
+        return self._redirect_to_lobby(game_slug, invite_link)
+
+
+class JoinSlotView(LoginRequiredMixin, SlotActionMixin, View):
     def post(self, request, game_slug, invite_link, slot_id):
         with transaction.atomic():
-            slot = get_object_or_404(
-                Slot.objects.select_for_update().select_related('lobby', 'lobby__game'),
-                id=slot_id,
-                lobby__invite_link=invite_link
-            )
+            slot = self._get_locked_slot(slot_id, invite_link)
             lobby = slot.lobby
 
             can_join, reason = lobby.can_join(request.user)
@@ -119,7 +156,9 @@ class JoinSlotView(LoginRequiredMixin, View):
                 return self._handle_error(request, reason, game_slug, invite_link)
 
             if not slot.is_available:
-                return self._handle_error(request, "This slot is already taken", game_slug, invite_link)
+                return self._handle_error(
+                    request, "This slot is already taken", game_slug, invite_link
+                )
 
             slot.player = request.user
             slot.save()
@@ -127,50 +166,29 @@ class JoinSlotView(LoginRequiredMixin, View):
             messages.success(request, f"You joined as {slot.role_name}!")
 
             if request.headers.get("HX-Request"):
-                context = {
-                    "slot": slot,
-                    "lobby": lobby,
-                    "user": request.user
-                }
-                return render(request, "lobbies/partials/slot_card.html", context=context)
+                if request.headers.get("HX-Request"):
+                    return render(request, "lobbies/partials/slot_card.html", {
+                        "slot": slot,
+                        "lobby": lobby,
+                        "user": request.user
+                    })
 
-        return self._handle_redirect(request, game_slug, invite_link)
-
-    def _handle_error(self, request, message, game_slug, invite_link):
-        messages.error(request, message)
-
-        if request.headers.get("HX-Request"):
-            response = HttpResponse(status=200)
-            target_url = reverse("lobbies:lobby-detail", kwargs={
-                "game_slug": game_slug,
-                "invite_link": invite_link
-            })
-            response["HX-Redirect"] = target_url
-            return response
-
-        return self._handle_redirect(request, game_slug, invite_link)
-
-    def _handle_redirect(self, request, game_slug, invite_link):
-        return redirect("lobbies:lobby-detail", game_slug=game_slug, invite_link=invite_link)
+        return self._redirect_to_lobby(game_slug, invite_link)
 
 
-class LeaveSlotView(LoginRequiredMixin, View):
+class LeaveSlotView(LoginRequiredMixin, SlotActionMixin, View):
     def post(self, request, game_slug, invite_link, slot_id):
         with transaction.atomic():
-            slot = get_object_or_404(
-                Slot.objects.select_for_update().select_related("lobby"),
-                id=slot_id,
-                lobby__invite_link=invite_link
-            )
+            slot = self._get_locked_slot(slot_id, invite_link)
             lobby = slot.lobby
 
             if slot.player != request.user:
                 messages.error(request, "You cannot leave a slot that isn't yours.")
-                return self._handle_redirect(request, game_slug, invite_link)
+                return self._redirect_to_lobby(game_slug, invite_link)
 
             if lobby.host == request.user:
                 messages.error(request, "The host cannot leave. You must delete the lobby.")
-                return self._handle_redirect(request, game_slug, invite_link)
+                return self._redirect_to_lobby(game_slug, invite_link)
 
             slot.player = None
             slot.save()
@@ -184,7 +202,4 @@ class LeaveSlotView(LoginRequiredMixin, View):
                     "user": request.user
                 })
 
-        return self._handle_redirect(request, game_slug, invite_link)
-
-    def _handle_redirect(self, request, game_slug, invite_link):
-        return redirect("lobbies:lobby-detail", game_slug=game_slug, invite_link=invite_link)
+        return self._redirect_to_lobby(game_slug, invite_link)

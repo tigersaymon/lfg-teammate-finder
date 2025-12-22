@@ -8,6 +8,9 @@ from games.models import (
 
 
 class GameRoleInLine(admin.TabularInline):
+    """
+    Inline admin interface for managing GameRoles directly within the Game page.
+    """
     model = GameRole
     extra = 1
     fields = ["order", "name", "icon_class"]
@@ -16,6 +19,11 @@ class GameRoleInLine(admin.TabularInline):
 
 @admin.register(Game)
 class GameAdmin(admin.ModelAdmin):
+    """
+    Admin configuration for Games.
+
+    Includes inline role editing and standard filtering options.
+    """
     list_display = ["title", "slug", "team_size", "created_at"]
     list_filter = ["title", "team_size"]
     search_fields = ["title", "slug"]
@@ -35,6 +43,11 @@ class GameAdmin(admin.ModelAdmin):
 
 @admin.register(GameRole)
 class UserGameRole(admin.ModelAdmin):
+    """
+    Admin configuration for GameRoles.
+
+    Uses 'select_related' to optimize the display of the related Game object.
+    """
     list_select_related = ["game"]
     list_display = ["order", "name", "game", "created_at"]
     list_filter = ["game"]
@@ -50,6 +63,12 @@ class UserGameRole(admin.ModelAdmin):
 
 @admin.register(UserGameProfile)
 class UserGameProfileAdmin(admin.ModelAdmin):
+    """
+    Admin configuration for User Game Profiles.
+
+    Features autocomplete fields for related lookups to handle large datasets
+    and optimized database queries.
+    """
     list_display = ["user", "game", "rank", "main_role", "updated_at"]
     list_filter = ["game", "created_at"]
     search_fields = ["user__username", "user__email", "game__title", "rank"]

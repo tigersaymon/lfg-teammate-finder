@@ -5,6 +5,13 @@ from django.db import models
 
 
 class Game(models.Model):
+    """
+    Represents a video game supported by the platform.
+
+    This model serves as the core configuration for each supported title,
+    storing branding elements and technical constraints like team size,
+    which is used to automate lobby and slot generation.
+    """
     title = models.CharField(
         max_length=100,
         unique=True,
@@ -40,6 +47,12 @@ class Game(models.Model):
 
 
 class GameRole(models.Model):
+    """
+    Defines specific playable roles for a Game (e.g., 'Sniper', 'Healer').
+
+    Roles allow for more structured matchmaking by letting users indicate
+    their preferred position or allowing lobby hosts to request specific needs.
+    """
     name = models.CharField(max_length=50)
     icon_class = models.CharField(
         max_length=50,
@@ -66,6 +79,13 @@ class GameRole(models.Model):
 
 
 class UserGameProfile(models.Model):
+    """
+    Stores user-specific gaming metadata for a particular Game.
+
+    Acts as a 'digital player card', linking a User to a Game with
+    additional info like their rank and primary role. This data is
+    essential for entering lobbies.
+    """
     rank = models.CharField(
         max_length=50,
         blank=True

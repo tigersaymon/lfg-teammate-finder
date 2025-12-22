@@ -1,24 +1,57 @@
 {% extends "base.html" %}
-{% load crispy_forms_filters %}
+{% load crispy_forms_tags %}
 
 {% block content %}
+  <div class="row justify-content-center py-5">
+    <div class="col-md-6 col-lg-5 col-xl-4">
 
-  {% if form.errors %}
-    <p>Your username and password didn't match. Please try again.</p>
-  {% endif %}
+      <div class="card bg-dark border-secondary border-opacity-25 shadow text-white">
+        <div class="card-body p-4">
 
-  <h1>Login</h1>
+          <div class="text-center mb-4">
+            <div
+                class="bg-primary bg-opacity-10 text-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                style="width: 64px; height: 64px;">
+              <i class="bi bi-box-arrow-in-right fs-2"></i>
+            </div>
+            <h2 class="fw-bold">Welcome Back</h2>
+            <p class="text-secondary small">Please login to continue</p>
+          </div>
 
-  {% if next %}
-    <p>Please login to see this page.</p>
-  {% endif %}
+          {% if form.errors %}
+            <div class="alert alert-danger d-flex align-items-center" role="alert">
+              <i class="bi bi-exclamation-triangle-fill me-2"></i>
+              <div class="small">Incorrect username or password.</div>
+            </div>
+          {% endif %}
 
-  <form method="post" action="{% url 'login' %}">
-    {% csrf_token %}
-    {{ form|crispy }}
+          {% if next %}
+            <div class="alert alert-warning small">
+              <i class="bi bi-info-circle me-1"></i> Please login to access this page.
+            </div>
+          {% endif %}
 
-    <input type="submit" value="Login" class="btn btn-primary"/>
-    <input type="hidden" name="next" value="{{ next }}"/>
-  </form>
+          <form method="post" action="{% url 'login' %}">
+            {% csrf_token %}
 
+            {{ form|crispy }}
+
+            <input type="hidden" name="next" value="{{ next }}"/>
+
+            <div class="d-grid mt-4">
+              <button type="submit" class="btn btn-primary btn-lg">
+                Login
+              </button>
+            </div>
+          </form>
+
+          <div class="text-center mt-4">
+            <p class="small text-secondary mb-0">Don't have an account?</p>
+            <a href="{% url 'users:sign-up' %}" class="text-primary text-decoration-none fw-bold">Sign up here</a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
 {% endblock %}

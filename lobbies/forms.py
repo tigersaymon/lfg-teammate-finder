@@ -18,6 +18,7 @@ class LobbyForm(forms.ModelForm):
         label="Looking for (Optional)",
         widget=forms.CheckboxSelectMultiple(attrs={"class": "d-flex gap-3 flex-wrap list-unstyled mb-0"})
     )
+
     class Meta:
         model = Lobby
         fields = ["title", "description", "size", "communication_link", "is_public"]
@@ -41,7 +42,7 @@ class LobbyForm(forms.ModelForm):
             "is_public": forms.CheckboxInput(attrs={"class": "form-check-input"}),
         }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         self.game = kwargs.pop("game", None)
         super().__init__(*args, **kwargs)
 
@@ -63,9 +64,8 @@ class LobbyForm(forms.ModelForm):
             })
             self.fields["size"].help_text = f"Standard for {self.game.title}: {self.game.team_size} players."
 
-    def clean_size(self):
+    def clean_size(self) -> int:
         size = self.cleaned_data["size"]
         if self.game and size > self.game.team_size * 2:
             raise forms.ValidationError(f"Too many players for {self.game.title}")
         return size
-

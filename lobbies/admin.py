@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.http import HttpRequest
 
 from lobbies.models import Lobby
 
@@ -29,10 +30,10 @@ class LobbyAdmin(admin.ModelAdmin):
         "size"
     ]
 
-    def has_add_permission(self, request):
+    def has_add_permission(self, request: HttpRequest) -> bool:
         return False
 
-    def filled_slots(self, obj):
+    def filled_slots(self, obj: Lobby) -> str:
         return f"{obj.filled_count}/{obj.size}"
 
     filled_slots.short_description = "Slots"

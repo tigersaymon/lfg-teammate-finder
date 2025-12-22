@@ -1,4 +1,5 @@
 from django.urls import path
+
 from .views import (
     LobbyListView,
     LobbyCreateView,
@@ -50,7 +51,7 @@ urlpatterns = [
     ),
     path(
         "<slug:game_slug>/<uuid:invite_link>/toggle-privacy/",
-         ToggleLobbyPrivacyView.as_view(),
-         name="lobby-toggle-privacy"
-         ),
+        ToggleLobbyPrivacyView.as_view(),
+        name="lobby-toggle-privacy"
+    ),
 ]

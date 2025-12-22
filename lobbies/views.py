@@ -1,9 +1,11 @@
+from typing import Any, Dict
+
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db import transaction
-from django.db.models import Count, Q, F, Subquery, OuterRef, IntegerField, Prefetch
+from django.db.models import Count, Q, F, Subquery, OuterRef, IntegerField, Prefetch, QuerySet
 from django.db.models.functions import Coalesce
-from django.http import HttpResponse, HttpResponseForbidden
+from django.http import HttpResponse, HttpResponseForbidden, HttpRequest
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
 from django.views import generic, View
@@ -14,7 +16,7 @@ from lobbies.models import Lobby, Slot
 
 
 class HTMXRedirect(HttpResponse):
-    def __init__(self, redirect_to, *args, **kwargs):
+    def __init__(self, redirect_to: str, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self["HX-Redirect"] = redirect_to
         self.status_code = 200
@@ -25,7 +27,7 @@ class LobbyListView(generic.ListView):
     context_object_name = "lobbies"
     paginate_by = 10
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[Lobby]:
         game_slug = self.kwargs.get("game_slug")
         self.game = get_object_or_404(Game, slug=game_slug)
         user = self.request.user
@@ -83,7 +85,7 @@ class LobbyListView(generic.ListView):
 
         return queryset
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs: Any) -> Dict[str, Any]:
         context = super().get_context_data(**kwargs)
         context["game"] = self.game
         context["roles"] = GameRole.objects.filter(game=self.game).order_by("order")
@@ -100,11 +102,11 @@ class LobbyCreateView(LoginRequiredMixin, generic.CreateView):
     form_class = LobbyForm
     template_name = "lobbies/lobby_form.html"
 
-    def setup(self, request, *args, **kwargs):
+    def setup(self, request: HttpRequest, *args: Any, **kwargs: Any) -> None:
         super().setup(request, *args, **kwargs)
         self.game = get_object_or_404(Game, slug=self.kwargs.get("game_slug"))
 
-    def dispatch(self, request, *args, **kwargs):
+    def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
         if request.user.is_authenticated and not request.user.game_profiles.filter(game=self.game).exists():
             messages.warning(
                 request,
@@ -114,17 +116,17 @@ class LobbyCreateView(LoginRequiredMixin, generic.CreateView):
 
         return super().dispatch(request, *args, **kwargs)
 
-    def get_form_kwargs(self):
+    def get_form_kwargs(self) -> Dict[str, Any]:
         kwargs = super().get_form_kwargs()
         kwargs["game"] = self.game
         return kwargs
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs: Any) -> Dict[str, Any]:
         context = super().get_context_data(**kwargs)
         context["game"] = self.game
         return context
 
-    def form_valid(self, form):
+    def form_valid(self, form: LobbyForm) -> HttpResponse:
         form.instance.host = self.request.user
         form.instance.game = self.game
 
@@ -153,7 +155,7 @@ class LobbyCreateView(LoginRequiredMixin, generic.CreateView):
 
         return redirect(self.get_success_url())
 
-    def get_success_url(self):
+    def get_success_url(self) -> str:
         return reverse("lobbies:lobby-detail", kwargs={
             "game_slug": self.game.slug,
             "invite_link": self.object.invite_link
@@ -166,7 +168,7 @@ class LobbyDetailView(generic.DetailView):
     slug_url_kwarg = "invite_link"
     slug_field = "invite_link"
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[Lobby]:
         return super().get_queryset().select_related(
             "host", "game"
         ).prefetch_related(
@@ -176,7 +178,7 @@ class LobbyDetailView(generic.DetailView):
             filled_slots_count=Count("slots", filter=Q(slots__player__isnull=False))
         )
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs: Any) -> Dict[str, Any]:
         context = super().get_context_data(**kwargs)
         lobby = self.object
 
@@ -203,15 +205,15 @@ class LobbyDeleteView(LoginRequiredMixin, UserPassesTestMixin, generic.DeleteVie
     slug_url_kwarg = "invite_link"
     slug_field = "invite_link"
 
-    def get_object(self, queryset=None):
+    def get_object(self, queryset: QuerySet | None = None) -> Lobby:
         if not hasattr(self, "_cached_object"):
             self._cached_object = super().get_object(queryset)
         return self._cached_object
 
-    def test_func(self):
+    def test_func(self) -> bool:
         return self.get_object().host == self.request.user
 
-    def get_success_url(self):
+    def get_success_url(self) -> str:
         return reverse_lazy(
             "lobbies:lobby-list",
             kwargs={"game_slug": self.get_object().game.slug}
@@ -219,17 +221,27 @@ class LobbyDeleteView(LoginRequiredMixin, UserPassesTestMixin, generic.DeleteVie
 
 
 class SlotActionMixin:
-    def _get_locked_slot(self, slot_id, invite_link):
+    def _get_locked_slot(self, slot_id: int, invite_link: str) -> Slot:
         return get_object_or_404(
             Slot.objects.select_for_update().select_related('lobby'),
             id=slot_id,
             lobby__invite_link=invite_link
         )
 
-    def _redirect_to_lobby(self, game_slug, invite_link):
-        return redirect("lobbies:lobby-detail", game_slug=game_slug, invite_link=invite_link)
+    def _redirect_to_lobby(self, game_slug: str, invite_link: str) -> HttpResponse:
+        return redirect(
+            "lobbies:lobby-detail",
+            game_slug=game_slug,
+            invite_link=invite_link
+        )
 
-    def _handle_error(self, request, message, game_slug, invite_link):
+    def _handle_error(
+        self,
+        request: HttpRequest,
+        message: str,
+        game_slug: str,
+        invite_link: str
+    ) -> HttpResponse:
         messages.error(request, message)
 
         if request.headers.get("HX-Request"):
@@ -243,7 +255,13 @@ class SlotActionMixin:
 
 
 class JoinSlotView(LoginRequiredMixin, SlotActionMixin, View):
-    def post(self, request, game_slug, invite_link, slot_id):
+    def post(
+        self,
+        request: HttpRequest,
+        game_slug: str,
+        invite_link: str,
+        slot_id: int
+    ) -> HttpResponse:
         with transaction.atomic():
             slot = self._get_locked_slot(slot_id, invite_link)
             lobby = slot.lobby
@@ -287,7 +305,13 @@ class JoinSlotView(LoginRequiredMixin, SlotActionMixin, View):
 
 
 class LeaveSlotView(LoginRequiredMixin, SlotActionMixin, View):
-    def post(self, request, game_slug, invite_link, slot_id):
+    def post(
+            self,
+            request: HttpRequest,
+            game_slug: str,
+            invite_link: str,
+            slot_id: int
+    ) -> HttpResponse:
         with transaction.atomic():
             slot = self._get_locked_slot(slot_id, invite_link)
             lobby = slot.lobby
@@ -316,7 +340,13 @@ class LeaveSlotView(LoginRequiredMixin, SlotActionMixin, View):
 
 
 class KickPlayerView(LoginRequiredMixin, SlotActionMixin, View):
-    def post(self, request, game_slug, invite_link, slot_id):
+    def post(
+            self,
+            request: HttpRequest,
+            game_slug: str,
+            invite_link: str,
+            slot_id: int
+    ) -> HttpResponse:
         with transaction.atomic():
             slot = get_object_or_404(
                 Slot.objects.select_related("lobby", "player"),
@@ -349,7 +379,12 @@ class KickPlayerView(LoginRequiredMixin, SlotActionMixin, View):
 
 
 class ToggleLobbyPrivacyView(LoginRequiredMixin, View):
-    def post(self, request, game_slug, invite_link):
+    def post(
+            self,
+            request: HttpRequest,
+            game_slug: str,
+            invite_link: str,
+    ) -> HttpResponse:
         lobby = get_object_or_404(Lobby, invite_link=invite_link, host=request.user)
 
         lobby.is_public = not lobby.is_public

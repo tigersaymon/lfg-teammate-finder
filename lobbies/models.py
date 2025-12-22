@@ -1,4 +1,5 @@
 import uuid
+from typing import Any, Tuple
 
 from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
@@ -62,10 +63,10 @@ class Lobby(models.Model):
         verbose_name_plural = "Lobbies"
         ordering = ["-created_at"]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.title} ({self.game.title})"
 
-    def save(self, *args, **kwargs):
+    def save(self, *args, **kwargs) -> None:
         is_new = self.pk is None
         with transaction.atomic():
             super().save(*args, **kwargs)
@@ -73,7 +74,7 @@ class Lobby(models.Model):
             if is_new:
                 self._create_slots()
 
-    def _create_slots(self):
+    def _create_slots(self) -> None:
         slots = []
 
         for i in range(1, self.size + 1):
@@ -85,10 +86,10 @@ class Lobby(models.Model):
         first_slot.player = self.host
         first_slot.save()
 
-    def get_invite_url(self):
+    def get_invite_url(self) -> str:
         return f"/lobbies/join/{self.invite_link}/"
 
-    def can_join(self, user):
+    def can_join(self, user: Any) -> Tuple[bool, str]:
         if self.status != self.Status.SEARCHING:
             return False, "Lobby is not accepting players"
 
@@ -101,11 +102,11 @@ class Lobby(models.Model):
         return True, "OK"
 
     @property
-    def filled_count(self):
+    def filled_count(self) -> int:
         return self.slots.filter(player__isnull=False).count()
 
     @property
-    def is_full(self):
+    def is_full(self) -> bool:
         return self.filled_count >= self.size
 
 
@@ -142,12 +143,12 @@ class Slot(models.Model):
             models.UniqueConstraint(fields=["lobby", "player"], name="unique_player_per_lobby"),
         ]
 
-    def __str__(self):
+    def __str__(self) -> str:
         role_str = self.required_role.name if self.required_role else "Any"
         player_str = self.player.username if self.player else "Empty"
         return f"Slot {self.order}: {player_str} ({role_str})"
 
-    def save(self, *args, **kwargs):
+    def save(self, *args, **kwargs) -> None:
         from django.utils import timezone
 
         if self.player and not self.joined_at:
@@ -162,17 +163,17 @@ class Slot(models.Model):
             self.lobby.save(update_fields=["status"])
 
     @property
-    def is_filled(self):
+    def is_filled(self) -> bool:
         return self.player is not None
 
     @property
-    def is_available(self):
+    def is_available(self) -> bool:
         return self.player is None
 
     @property
-    def role_name(self):
+    def role_name(self) -> str:
         return self.required_role.name if self.required_role else "Any Role"
 
     @property
-    def role_icon(self):
+    def role_icon(self) -> str:
         return self.required_role.icon_class if self.required_role else "fa-solid fa-users"

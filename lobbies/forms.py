@@ -46,15 +46,16 @@ class LobbyForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
 
         if self.game:
-            roles_qs = GameRole.objects.filter(
-                game=self.game
-            ).select_related("game").order_by('order')
+            roles = self.game.roles.all()
 
-            self.fields["host_role"].queryset = roles_qs
-            self.fields["needed_roles"].queryset = roles_qs
+            self.fields["host_role"].queryset = roles
+            self.fields["needed_roles"].queryset = roles
+
+            role_choices = [(role.id, role.name) for role in roles]
+            self.fields["host_role"].choices = [("", "Flex")] + role_choices
+            self.fields["needed_roles"].choices = role_choices
 
             max_size = min(self.game.team_size * 2, 20)
-
             self.fields["size"].widget.attrs.update({
                 "min": 2,
                 "max": max_size,
@@ -67,3 +68,4 @@ class LobbyForm(forms.ModelForm):
         if self.game and size > self.game.team_size * 2:
             raise forms.ValidationError(f"Too many players for {self.game.title}")
         return size
+

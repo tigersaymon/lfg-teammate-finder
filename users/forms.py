@@ -1,6 +1,6 @@
+from django import forms
 from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import UserCreationForm
-from django import forms
 
 User = get_user_model()
 
@@ -12,7 +12,7 @@ class SignUpForm(UserCreationForm):
         model = User
         fields = ("username", "email")
 
-    def clean_email(self):
+    def clean_email(self) -> str:
         email = self.cleaned_data.get("email")
 
         if User.objects.filter(email=email).exists():
@@ -26,15 +26,30 @@ class UserSettingsForm(forms.ModelForm):
         model = User
         fields = ["avatar", "username", "email", "bio", "discord_tag", "steam_url"]
         widgets = {
-            "username": forms.TextInput(attrs={"class": "form-control"}),
-            "email": forms.EmailInput(attrs={"class": "form-control"}),
-            "bio": forms.Textarea(attrs={"class": "form-control", "rows": 4}),
-            "discord_tag": forms.TextInput(attrs={"class": "form-control", "placeholder": "username#1234"}),
-            "steam_url": forms.URLInput(attrs={"class": "form-control", "placeholder": "https://steamcommunity.com/id/..."}),
-            "avatar": forms.FileInput(attrs={"class": "form-control"}),
+            "username": forms.TextInput(attrs={
+                "class": "form-control"
+            }),
+            "email": forms.EmailInput(attrs={
+                "class": "form-control"
+            }),
+            "bio": forms.Textarea(attrs={
+                "class": "form-control",
+                "rows": 4
+            }),
+            "discord_tag": forms.TextInput(attrs={
+                "class": "form-control",
+                "placeholder": "username#1234"
+            }),
+            "steam_url": forms.URLInput(attrs={
+                "class": "form-control",
+                "placeholder": "https://steamcommunity.com/id/..."
+            }),
+            "avatar": forms.FileInput(attrs={
+                "class": "form-control"
+            }),
         }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
         if "email" in self.fields:

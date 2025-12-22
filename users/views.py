@@ -1,12 +1,15 @@
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db.models import QuerySet
+from django.http import HttpResponse
 from django.urls import reverse_lazy
 from django.views import generic
 
 from users.forms import SignUpForm, UserSettingsForm
 
 User = get_user_model()
+
 
 class SignUpView(generic.CreateView):
     form_class = SignUpForm
@@ -20,9 +23,9 @@ class GeneralSettingsView(LoginRequiredMixin, generic.UpdateView):
     template_name = "users/settings/general.html"
     success_url = reverse_lazy("settings-general")
 
-    def get_object(self, queryset=None):
+    def get_object(self, queryset: QuerySet | None = None) -> User:
         return self.request.user
 
-    def form_valid(self, form):
+    def form_valid(self, form: UserSettingsForm) -> HttpResponse:
         messages.success(self.request, "Profile updated successfully!")
         return super().form_valid(form)

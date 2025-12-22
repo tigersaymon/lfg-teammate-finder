@@ -16,6 +16,7 @@
 
             <div class="position-relative bg-dark bg-opacity-50" style="height: 250px;">
               {% if game.icon %}
+{#                Cloudinary#}
                 <img src="{{ game.icon.url }}" class="w-100 h-100 object-fit-contain p-3" alt="{{ game.title }}">
               {% else %}
                 <div class="w-100 h-100 d-flex align-items-center justify-content-center bg-secondary text-white">

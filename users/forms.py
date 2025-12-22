@@ -6,6 +6,11 @@ User = get_user_model()
 
 
 class SignUpForm(UserCreationForm):
+    """
+    Form for registering a new user.
+
+    Extends UserCreationForm to enforce email uniqueness.
+    """
     email = forms.EmailField(required=True)
 
     class Meta:
@@ -13,6 +18,15 @@ class SignUpForm(UserCreationForm):
         fields = ("username", "email")
 
     def clean_email(self) -> str:
+        """
+        Validates that the provided email address is unique across all users.
+
+        Returns:
+            str: The validated email address.
+
+        Raises:
+            ValidationError: If the email is already registered.
+        """
         email = self.cleaned_data.get("email")
 
         if User.objects.filter(email=email).exists():
@@ -22,6 +36,13 @@ class SignUpForm(UserCreationForm):
 
 
 class UserSettingsForm(forms.ModelForm):
+    """
+    Form for updating user profile information.
+
+    Allows users to edit their bio, discord tag, steam url and avatar.
+    The email field is displayed but disabled to prevent changes via this form.
+    """
+
     class Meta:
         model = User
         fields = ["avatar", "username", "email", "bio", "discord_tag", "steam_url"]
@@ -50,6 +71,9 @@ class UserSettingsForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs) -> None:
+        """
+        Initializes the form and disables the email field.
+        """
         super().__init__(*args, **kwargs)
 
         if "email" in self.fields:

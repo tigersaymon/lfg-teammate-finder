@@ -6,6 +6,12 @@ from users.models import User
 
 @admin.register(User)
 class UserAdmin(UserAdmin):
+    """
+    Admin configuration for the custom User model.
+
+    Customizes fieldsets to group gaming-related fields (Discord, Steam)
+    separately from personal info and authentication data.
+    """
     list_display = [
         "username",
         "email",

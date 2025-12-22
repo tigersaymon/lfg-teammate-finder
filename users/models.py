@@ -4,6 +4,12 @@ from django.db import models
 
 
 class User(AbstractUser):
+    """
+    Custom User model representing a platform member.
+
+    Extends the default Django AbstractUser to include gaming-specific
+    fields such as avatars, Discord tags, Steam URLs, and a reputation system.
+    """
     email = models.EmailField(unique=True, blank=False)
     avatar = CloudinaryField(
         "avatar",

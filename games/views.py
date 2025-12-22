@@ -1,4 +1,6 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db.models import QuerySet
+from django.http import HttpRequest, HttpResponse
 from django.shortcuts import render, get_object_or_404
 from django.urls import reverse_lazy
 from django.views import generic, View
@@ -14,7 +16,7 @@ class GameListView(generic.ListView):
 
 
 class GetGameRolesView(View):
-    def get(self, request, *args, **kwargs):
+    def get(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
         game_id = request.GET.get("game")
         roles = GameRole.objects.none()
 
@@ -29,7 +31,7 @@ class MyGameProfilesListView(LoginRequiredMixin, generic.ListView):
     template_name = "games/profile_list.html"
     context_object_name = "profiles"
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet:
         return self.request.user.game_profiles.select_related("game", "main_role").order_by("-created_at")
 
 
@@ -39,12 +41,12 @@ class GameProfileCreateView(LoginRequiredMixin, generic.CreateView):
     template_name = "games/profile_form.html"
     success_url = reverse_lazy("games:my-profiles")
 
-    def get_form_kwargs(self):
+    def get_form_kwargs(self) -> dict:
         kwargs = super().get_form_kwargs()
         kwargs["user"] = self.request.user
         return kwargs
 
-    def form_valid(self, form):
+    def form_valid(self, form: UserGameProfileForm) -> HttpResponse:
         form.instance.user = self.request.user
         return super().form_valid(form)
 
@@ -55,7 +57,7 @@ class GameProfileUpdateView(LoginRequiredMixin, generic.UpdateView):
     template_name = "games/profile_form.html"
     success_url = reverse_lazy("games:my-profiles")
 
-    def get_object(self, queryset=None):
+    def get_object(self, queryset: QuerySet | None = None) -> UserGameProfile:
         game_slug = self.kwargs.get("game_slug")
         return get_object_or_404(
             UserGameProfile,
@@ -69,7 +71,7 @@ class GameProfileDeleteView(LoginRequiredMixin, generic.DeleteView):
     template_name = "games/profile_confirm_delete.html"
     success_url = reverse_lazy("games:my-profiles")
 
-    def get_object(self, queryset=None):
+    def get_object(self, queryset: QuerySet | None = None) -> UserGameProfile:
         game_slug = self.kwargs.get("game_slug")
         return get_object_or_404(
             UserGameProfile,

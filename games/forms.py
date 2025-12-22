@@ -1,3 +1,5 @@
+from typing import Any
+
 from django import forms
 from django.urls import reverse
 
@@ -22,8 +24,8 @@ class UserGameProfileForm(forms.ModelForm):
                 "placeholder": "Ex: Global Elite"}),
         }
 
-    def __init__(self, *args, user=None, **kwargs):
-        super().__init__(*args,  **kwargs)
+    def __init__(self, *args, user: Any = None, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
 
         htmx_url = reverse("games:get-game-roles")
 
@@ -53,4 +55,3 @@ class UserGameProfileForm(forms.ModelForm):
 
         elif self.instance.pk:
             self.fields["main_role"].queryset = self.instance.game.roles.all()
-

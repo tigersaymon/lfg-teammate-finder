@@ -1,7 +1,7 @@
 from django.urls import path
 
 from games.views import (
-    GameListView, 
+    GameListView,
     GetGameRolesView,
     MyGameProfilesListView,
     GameProfileCreateView,

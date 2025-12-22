@@ -1,3 +1,4 @@
+from cloudinary.models import CloudinaryField
 from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
@@ -14,8 +15,9 @@ class Game(models.Model):
         unique=True,
     )
 
-    icon = models.ImageField(
-        upload_to="games/icons/",
+    icon = CloudinaryField(
+        "game_icon",
+        folder="games/icons/",
         blank=True,
         null=True
     )
@@ -31,10 +33,9 @@ class Game(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        verbose_name = "Game"
         ordering = ["title"]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.title
 
 
@@ -60,8 +61,8 @@ class GameRole(models.Model):
             models.UniqueConstraint(fields=["game", "name"], name="unique_game_roles")
         ]
 
-    def __str__(self):
-        return f"{self.game.title} - {self.name}"
+    def __str__(self) -> str:
+        return self.name
 
 
 class UserGameProfile(models.Model):
@@ -100,5 +101,5 @@ class UserGameProfile(models.Model):
             models.UniqueConstraint(fields=["user", "game"], name="unique_user_profiles")
         ]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.user.username} in {self.game.title}"

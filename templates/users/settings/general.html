@@ -1,66 +1,73 @@
 {% extends "settings_base.html" %}
 
 {% block settings_content %}
-  <h3 class="mb-4">General Settings</h3>
+  <h3 class="mb-1 fw-bold">General Profile</h3>
+  <p class="text-secondary mb-4 small">Update your personal information and avatar.</p>
 
   <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
 
-    <div class="row mb-4 align-items-center">
-      <div class="col-auto">
-        {% if user.avatar %}
-          <img src="{{ user.avatar.url }}" alt="Avatar" class="rounded-circle"
-               style="width: 80px; height: 80px; object-fit: cover;">
-        {% else %}
-          <div class="bg-light rounded-circle d-flex align-items-center justify-content-center text-muted"
-               style="width: 80px; height: 80px;">
-            <i class="bi bi-person-fill fs-1"></i>
-          </div>
-        {% endif %}
-      </div>
-      <div class="col">
-        <label for="{{ form.avatar.id_for_label }}" class="form-label fw-bold">Profile Picture</label>
-        {{ form.avatar }}
-        <div class="form-text">JPG or PNG, max 2MB.</div>
-        {% if form.avatar.errors %}
-          <div class="text-danger small">{{ form.avatar.errors }}</div>
-        {% endif %}
+    <div class="card bg-dark bg-opacity-25 border-secondary border-opacity-25 mb-4">
+      <div class="card-body d-flex align-items-center gap-4">
+        <div class="position-relative">
+            {% if user.avatar %}
+              <img src="{{ user.avatar.url }}" alt="Avatar" class="rounded-circle border border-2 border-secondary"
+                   style="width: 80px; height: 80px; object-fit: cover;">
+            {% else %}
+              <div class="rounded-circle bg-secondary bg-opacity-10 d-flex align-items-center justify-content-center text-secondary border border-secondary border-opacity-25"
+                   style="width: 80px; height: 80px;">
+                <i class="bi bi-person-fill fs-1"></i>
+              </div>
+            {% endif %}
+        </div>
+
+        <div class="flex-grow-1">
+            <label for="{{ form.avatar.id_for_label }}" class="form-label fw-semibold text-light mb-1">Profile Picture</label>
+            {{ form.avatar }}
+            <div class="form-text text-white-50 small mt-1">
+                Supported formats: JPG, PNG. Max size: 2MB.
+            </div>
+             {% if form.avatar.errors %}
+              <div class="text-danger small mt-1">{{ form.avatar.errors }}</div>
+            {% endif %}
+        </div>
       </div>
     </div>
 
-    <div class="row g-3">
+    <div class="row g-3 mb-4">
       <div class="col-md-6">
-        <label class="form-label">Username</label>
+        <label class="form-label text-secondary small text-uppercase fw-bold">Username</label>
         {{ form.username }}
         <div class="text-danger small">{{ form.username.errors }}</div>
       </div>
       <div class="col-md-6">
-        <label class="form-label">Email</label>
+        <label class="form-label text-secondary small text-uppercase fw-bold">Email Address</label>
         {{ form.email }}
         <div class="text-danger small">{{ form.email.errors }}</div>
       </div>
 
       <div class="col-12">
-        <label class="form-label">Bio</label>
+        <label class="form-label text-secondary small text-uppercase fw-bold">Bio</label>
         {{ form.bio }}
-        <div class="form-text">Tell us a bit about yourself (gaming style, availability).</div>
+        <div class="form-text text-white-50">Brief description of your playstyle and availability.</div>
       </div>
+    </div>
 
-      <h5 class="mt-4 mb-2">Contacts</h5>
+    <h5 class="mb-3 mt-4 border-bottom border-secondary border-opacity-25 pb-2">Social Connections</h5>
+    <div class="row g-3">
       <div class="col-md-6">
-        <label class="form-label"><i class="bi bi-discord text-primary"></i> Discord Tag</label>
+        <label class="form-label"><i class="bi bi-discord" style="color: #5865F2;"></i> Discord Tag</label>
         {{ form.discord_tag }}
       </div>
       <div class="col-md-6">
-        <label class="form-label"><i class="bi bi-steam text-dark"></i> Steam URL</label>
+        <label class="form-label"><i class="bi bi-steam"></i> Steam URL</label>
         {{ form.steam_url }}
       </div>
     </div>
 
-    <hr class="my-4">
-
-    <div class="d-flex justify-content-end">
-      <button type="submit" class="btn btn-primary">Save Changes</button>
+    <div class="d-flex justify-content-end gap-2 mt-5">
+      <button type="button" class="btn btn-outline-secondary" onclick="history.back()">Cancel</button>
+      <button type="submit" class="btn btn-primary px-4">Save Changes</button>
     </div>
   </form>
 {% endblock %}

@@ -57,3 +57,47 @@ footer {
 .game-card:hover img {
     transform: scale(1.05);
 }
+
+.settings-card {
+    background-color: #1c1e24;
+    border: 1px solid #2d2f36;
+    border-radius: 12px;
+}
+
+.settings-nav .list-group-item {
+    background-color: transparent;
+    border: none;
+    color: #a0a0a0;
+    font-weight: 500;
+    padding: 12px 20px;
+    border-radius: 8px;
+    margin-bottom: 4px;
+    transition: all 0.2s ease;
+}
+
+.settings-nav .list-group-item:hover {
+    background-color: #2d2f36;
+    color: #fff;
+}
+
+.settings-nav .list-group-item.active {
+    background-color: #3f51b5;
+    color: #fff;
+}
+
+.form-control, .form-select {
+    background-color: #16171b;
+    border: 1px solid #2d2f36;
+    color: #e0e0e0;
+}
+
+.form-control:focus, .form-select:focus {
+    background-color: #16171b;
+    border-color: #3f51b5;
+    color: #fff;
+    box-shadow: 0 0 0 0.25rem rgba(63, 81, 181, 0.25);
+}
+
+.form-control[type="file"] {
+    padding: 10px;
+}

@@ -1,11 +1,13 @@
+from cloudinary.models import CloudinaryField
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
 
 class User(AbstractUser):
     email = models.EmailField(unique=True, blank=False)
-    avatar = models.ImageField(
-        upload_to="avatars/%Y/%m/%d/",
+    avatar = CloudinaryField(
+        "avatar",
+        folder="avatars",
         blank=True,
         null=True,
     )

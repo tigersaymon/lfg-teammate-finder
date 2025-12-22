@@ -1,34 +1,50 @@
 {% extends "base.html" %}
 
+{% block title %}LFG Finder - Find your Squad{% endblock %}
+
 {% block content %}
-  <div class="text-center mb-5">
-    <h1 class="display-4 fw-bold">Find your team!</h1>
-    <p class="lead text-secondary">Choose a game and join the lobby in seconds</p>
+  <div class="text-center mb-5 mt-4">
+    <h1 class="display-4 fw-bold text-white">Find your Squad!</h1>
+    <p class="lead text-secondary">Choose a game and find teammates in seconds.</p>
   </div>
 
-  <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-4">
+  <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 g-4 justify-content-center">
     {% for game in games %}
       <div class="col">
-        <div class="card h-100 bg-secondary-subtle border-0 game-card">
-          {% if game.icon %}
-            <img src="{{ game.icon.url }}" class="card-img-top" alt="{{ game.title }}"
-                 style="height: 300px; object-fit: cover;">
-          {% else %}
-            <div class="d-flex align-items-center justify-content-center bg-dark text-white" style="height: 200px;">
-              <i class="bi bi-controller fs-1"></i>
-            </div>
-          {% endif %}
+        <a href="{% url 'lobbies:lobby-list' game.slug %}" class="text-decoration-none">
+          <div class="card h-100 game-card text-white">
 
-          <div class="card-body text-center">
-            <h5 class="card-title fw-bold">{{ game.title }}</h5>
-            <p class="card-text text-muted small">5v5 • Team Play</p>
-            <a href="{% url 'lobbies:lobby-list' game.slug %}" class="btn btn-primary w-100 stretched-link">Find the lobby</a>
+            <div class="position-relative bg-dark bg-opacity-50" style="height: 250px;">
+              {% if game.icon %}
+                <img src="{{ game.icon.url }}" class="w-100 h-100 object-fit-contain p-3" alt="{{ game.title }}">
+              {% else %}
+                <div class="w-100 h-100 d-flex align-items-center justify-content-center bg-secondary text-white">
+                  <i class="bi bi-controller fs-1"></i>
+                </div>
+              {% endif %}
+
+              <div class="position-absolute bottom-0 start-0 w-100"
+                   style="height: 100px; background: linear-gradient(to top, rgba(28,30,36,1) 0%, rgba(28,30,36,0.6) 50%, transparent 100%);">
+              </div>
+            </div>
+
+            <div class="card-body text-center d-flex flex-column pt-2">
+              <h5 class="card-title fw-bold mb-1 text-uppercase tracking-wider">{{ game.title }}</h5>
+              <p class="card-text text-secondary small mb-3">
+                <i class="bi bi-people-fill me-1"></i> {{ game.team_size }}v{{ game.team_size }}
+              </p>
+
+              <div class="mt-auto">
+                <span class="btn btn-sm btn-outline-primary w-100 rounded-pill">Join Lobby</span>
+              </div>
+            </div>
           </div>
-        </div>
+        </a>
       </div>
     {% empty %}
-      <div class="col-12 text-center">
-        <p>No available games!</p>
+      <div class="col-12 text-center py-5">
+        <div class="text-muted mb-3"><i class="bi bi-emoji-frown fs-1"></i></div>
+        <p class="mt-2">No games configured yet.</p>
       </div>
     {% endfor %}
   </div>

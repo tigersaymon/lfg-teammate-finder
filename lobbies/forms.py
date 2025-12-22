@@ -12,6 +12,12 @@ class LobbyForm(forms.ModelForm):
         empty_label="Flex",
         widget=forms.Select(attrs={"class": "form-select"})
     )
+    needed_roles = forms.ModelMultipleChoiceField(
+        queryset=GameRole.objects.none(),
+        required=False,
+        label="Looking for (Optional)",
+        widget=forms.CheckboxSelectMultiple(attrs={"class": "d-flex gap-3 flex-wrap list-unstyled mb-0"})
+    )
     class Meta:
         model = Lobby
         fields = ["title", "description", "size", "communication_link", "is_public"]
@@ -40,9 +46,12 @@ class LobbyForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
 
         if self.game:
-            self.fields["host_role"].queryset = GameRole.objects.filter(
+            roles_qs = GameRole.objects.filter(
                 game=self.game
-            ).select_related("game")
+            ).select_related("game").order_by('order')
+
+            self.fields["host_role"].queryset = roles_qs
+            self.fields["needed_roles"].queryset = roles_qs
 
             max_size = min(self.game.team_size * 2, 20)
 
@@ -58,4 +67,3 @@ class LobbyForm(forms.ModelForm):
         if self.game and size > self.game.team_size * 2:
             raise forms.ValidationError(f"Too many players for {self.game.title}")
         return size
-

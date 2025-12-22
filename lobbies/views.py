@@ -1,13 +1,14 @@
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db import transaction
-from django.db.models import Count, Q, F
+from django.db.models import Count, Q, F, Subquery, OuterRef, IntegerField, Prefetch
+from django.db.models.functions import Coalesce
 from django.http import HttpResponse, HttpResponseForbidden
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
 from django.views import generic, View
 
-from games.models import Game, UserGameProfile
+from games.models import Game, UserGameProfile, GameRole
 from lobbies.forms import LobbyForm
 from lobbies.models import Lobby, Slot
 
@@ -43,14 +44,39 @@ class LobbyListView(generic.ListView):
         else:
             queryset = queryset.filter(is_public=True)
 
+        role_id = self.request.GET.get("role")
+        if role_id:
+            queryset = queryset.filter(
+                slots__player__isnull=True
+            ).filter(
+                Q(slots__required_role_id=role_id) |
+                Q(slots__required_role__isnull=True)
+            ).distinct()
+
+        filled_slots_subquery = Slot.objects.filter(
+            lobby=OuterRef("pk"),
+            player__isnull=False
+        ).values("lobby").annotate(
+            count=Count("id")
+        ).values("count")
+
         queryset = queryset.select_related(
             "host", "game"
         ).annotate(
-            filled_slots_count=Count("slots", filter=Q(slots__player__isnull=False))
+            filled_slots_count=Coalesce(
+                Subquery(filled_slots_subquery),
+                0,
+                output_field=IntegerField()
+            )
         ).prefetch_related(
             "slots__player",
-            "slots__required_role"
-        ).order_by('-created_at')
+            "slots__required_role",
+            Prefetch(
+                "host__game_profiles",
+                queryset=UserGameProfile.objects.filter(game=self.game),
+                to_attr="host_profile_cache"
+            )
+        ).order_by("-created_at")
 
         if self.request.GET.get("available_only"):
             queryset = queryset.filter(filled_slots_count__lt=F("size"))
@@ -60,7 +86,12 @@ class LobbyListView(generic.ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["game"] = self.game
-        # context["games"] = Game.objects.all()
+        context["roles"] = GameRole.objects.filter(game=self.game).order_by("order")
+
+        current_role_id = self.request.GET.get("role")
+        if current_role_id:
+            context["current_role_id"] = int(current_role_id)
+
         return context
 
 
@@ -103,6 +134,22 @@ class LobbyCreateView(LoginRequiredMixin, generic.CreateView):
             host_role = form.cleaned_data.get("host_role")
             if host_role:
                 self.object.slots.filter(order=1).update(required_role=host_role)
+
+            needed_roles = form.cleaned_data.get("needed_roles")
+            if needed_roles:
+                empty_slots = list(
+                    self.object.slots.exclude(order=1)
+                    .order_by("order")[:len(needed_roles)]
+                )
+
+                slots_to_update = []
+                for i, role in enumerate(needed_roles):
+                    if i < len(empty_slots):
+                        empty_slots[i].required_role = role
+                        slots_to_update.append(empty_slots[i])
+
+                if slots_to_update:
+                    Slot.objects.bulk_update(slots_to_update, ["required_role"])
 
         return redirect(self.get_success_url())
 
@@ -224,7 +271,6 @@ class JoinSlotView(LoginRequiredMixin, SlotActionMixin, View):
             messages.success(request, f"You joined as {slot.role_name}!")
 
             if request.headers.get("HX-Request"):
-
                 player_profile = request.user.game_profiles.filter(game=lobby.game).first()
 
                 return render(request, "lobbies/partials/slot_card.html", {

@@ -26,12 +26,25 @@
 
             {% for field in form %}
               <div class="mb-3">
-                <label for="{{ field.id_for_label }}" class="form-label fw-semibold">
-                  {{ field.label }}
-                  {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
-                </label>
 
-                {{ field }}
+                {% if field.name == 'needed_roles' %}
+                  <label class="form-label fw-semibold text-warning">
+                    <i class="bi bi-search me-1"></i> {{ field.label }}
+                  </label>
+                  <div class="card bg-secondary bg-opacity-25 border-secondary">
+                    <div class="card-body py-2 px-3">
+                      {{ field }}
+                    </div>
+                  </div>
+
+                {% else %}
+                  <label for="{{ field.id_for_label }}" class="form-label fw-semibold">
+                    {{ field.label }}
+                    {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+                  </label>
+
+                  {{ field }}
+                {% endif %}
 
                 {% if field.help_text %}
                   <div class="form-text text-light opacity-50">{{ field.help_text }}</div>
@@ -59,4 +72,4 @@
 
     </div>
   </div>
-{% endblock %}
+{% endblock %}L

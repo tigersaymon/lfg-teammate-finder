@@ -7,23 +7,24 @@
     {% if slot.player %}
       <div class="d-flex align-items-center">
         {% if slot.player.avatar %}
-          <img src="{{ slot.player.avatar.url }}" class="rounded-circle me-2" width="32" height="32">
+          <img src="{{ slot.player.avatar.url }}" class="rounded-circle me-2" width="32" height="32"
+               style="object-fit: cover;">
         {% else %}
-          <i class="bi bi-person-circle fs-4 me-2"></i>
+          <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center text-white me-2"
+               style="width: 32px; height: 32px;">
+            <i class="bi bi-person-fill"></i>
+          </div>
         {% endif %}
 
         <div>
           <strong>{{ slot.player.username }}</strong>
-
           {% if profile %}
             <span class="badge bg-primary ms-1">{{ profile.rank }}</span>
             {% if profile.main_role %}
-              <span class="badge bg-secondary ms-1" title="Main Role">
-                                {% if profile.main_role.icon_class %}
-                                  <i class="{{ profile.main_role.icon_class }}"></i>
-                                {% endif %}
+              <span class="badge bg-secondary ms-1">
+                {% if profile.main_role.icon %}<img src="{{ profile.main_role.icon.url }}" width="12">{% endif %}
                 {{ profile.main_role.name }}
-                            </span>
+              </span>
             {% endif %}
           {% else %}
             <span class="badge bg-warning text-dark ms-1">No Profile</span>
@@ -38,7 +39,19 @@
     {% else %}
       <div class="d-flex align-items-center">
         <i class="bi bi-dash-circle me-2"></i>
-        <span>Empty Slot</span>
+        <span>
+            Empty Slot
+          {% if slot.required_role %}
+            <span class="badge bg-outline-secondary text-dark border ms-1">
+                    {% if slot.required_role.icon %}
+                      <img src="{{ slot.required_role.icon.url }}" width="12" height="12" class="me-1">
+                    {% endif %}
+              {{ slot.required_role.name }} Only
+                </span>
+          {% else %}
+            <small class="text-muted ms-1">(Flex)</small>
+          {% endif %}
+        </span>
       </div>
     {% endif %}
   </div>
@@ -54,7 +67,6 @@
         </button>
       {% endif %}
     {% else %}
-
       {% if user == slot.player and user != lobby.host %}
         <button class="btn btn-sm btn-outline-warning"
                 hx-post="{% url 'lobbies:lobby-leave' lobby.game.slug lobby.invite_link slot.id %}"

@@ -7,7 +7,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
 from django.views import generic, View
 
-from games.models import Game
+from games.models import Game, UserGameProfile
 from lobbies.forms import LobbyForm
 from lobbies.models import Lobby, Slot
 
@@ -117,22 +117,29 @@ class LobbyDetailView(generic.DetailView):
     slug_field = "invite_link"
 
     def get_queryset(self):
-        return Lobby.objects.select_related(
+        return super().get_queryset().select_related(
             "game", "host"
         ).prefetch_related(
-            "slots__player",
-            "slots__required_role"
+            "slots__player"
         )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         lobby = self.object
 
+        player_ids = [slot.player.id for slot in lobby.slots.all() if slot.player]
+
+        profiles = UserGameProfile.objects.filter(
+            user_id__in=player_ids,
+            game=lobby.game
+        ).select_related("main_role")
+
+        profiles_dict = {p.user_id: p for p in profiles}
+
+        context["profiles_dict"] = profiles_dict
+
         if self.request.user.is_authenticated:
-            player_ids = lobby.slots.values_list("player_id", flat=True)
-            context["user_is_in_lobby"] = self.request.user.id in player_ids
-        else:
-            context["user_is_in_lobby"] = False
+            context['user_is_in_lobby'] = self.request.user.id in player_ids
 
         return context
 

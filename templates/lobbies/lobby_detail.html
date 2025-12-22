@@ -56,18 +56,19 @@
 
   <h3>Slots ({{ lobby.filled_slots_count }}/{{ lobby.size }})</h3>
 
-  <div class="list-group">
+<div class="list-group">
     {% for slot in lobby.slots.all %}
 
-      {% if slot.player %}
-        {% get_player_profile slot.player lobby.game as player_profile %}
-        {% include "lobbies/partials/slot_card.html" with slot=slot profile=player_profile %}
-      {% else %}
-        {% include "lobbies/partials/slot_card.html" with slot=slot profile=None %}
-      {% endif %}
+        {% if slot.player %}
+            {% with player_profile=profiles_dict|get_item:slot.player.id %}
+                {% include "lobbies/partials/slot_card.html" with slot=slot profile=player_profile %}
+            {% endwith %}
+        {% else %}
+            {% include "lobbies/partials/slot_card.html" with slot=slot profile=None %}
+        {% endif %}
 
     {% endfor %}
-  </div>
+</div>
 
   <div class="mt-4">
     <a href="{% url 'lobbies:lobby-list' lobby.game.slug %}" class="btn btn-outline-secondary">

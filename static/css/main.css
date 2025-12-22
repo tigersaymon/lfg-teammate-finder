@@ -1,36 +1,36 @@
 body {
-  background-color: #0f1012;
-  color: #e0e0e0;
+    background-color: #0f1012;
+    color: #e0e0e0;
 }
 
 .navbar {
-  background-color: rgba(22, 23, 27, 0.9) !important;
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid #2d2f36;
+    background-color: rgba(22, 23, 27, 0.9) !important;
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid #2d2f36;
 }
 
 .btn-primary {
-  background-color: #3f51b5;
-  border-color: #3f51b5;
+    background-color: #3f51b5;
+    border-color: #3f51b5;
 }
 
 .btn-primary:hover {
-  background-color: #303f9f;
-  border-color: #303f9f;
+    background-color: #303f9f;
+    border-color: #303f9f;
 }
 
 .dropdown-menu {
-  background-color: #1c1e24;
-  border: 1px solid #2d2f36;
+    background-color: #1c1e24;
+    border: 1px solid #2d2f36;
 }
 
 .dropdown-item {
-  color: #e0e0e0;
+    color: #e0e0e0;
 }
 
 .dropdown-item:hover {
-  background-color: #2d2f36;
-  color: #fff;
+    background-color: #2d2f36;
+    color: #fff;
 }
 
 footer {
@@ -46,7 +46,7 @@ footer {
 
 .game-card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
     border-color: #3f51b5;
 }
 
@@ -100,4 +100,25 @@ footer {
 
 .form-control[type="file"] {
     padding: 10px;
+}
+
+
+.btn-filter-active {
+    background-color: #3f51b5;
+    color: white;
+    border: none;
+}
+
+.btn-filter-active:hover {
+    background-color: #303f9f;
+    color: white;
+}
+
+.list-group-item {
+    border-color: #2d2f36;
+}
+
+.list-group-item-action:hover {
+    background-color: #22242b !important;
+    color: white;
 }

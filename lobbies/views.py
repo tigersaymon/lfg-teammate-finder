@@ -69,9 +69,22 @@ class LobbyCreateView(LoginRequiredMixin, generic.CreateView):
     form_class = LobbyForm
     template_name = "lobbies/lobby_form.html"
 
+    def setup(self, request, *args, **kwargs):
+        super().setup(request, *args, **kwargs)
+        self.game = get_object_or_404(Game, slug=self.kwargs.get("game_slug"))
+
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_authenticated and not request.user.game_profiles.filter(game=self.game).exists():
+            messages.warning(
+                request,
+                f"You need to set up your <b>{self.game.title}</b> profile before creating a lobby."
+            )
+            return redirect("games:profile-create")
+
+        return super().dispatch(request, *args, **kwargs)
+
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        self.game = get_object_or_404(Game, slug=self.kwargs["game_slug"])
         kwargs["game"] = self.game
         return kwargs
 
@@ -91,23 +104,13 @@ class LobbyCreateView(LoginRequiredMixin, generic.CreateView):
             if host_role:
                 self.object.slots.filter(order=1).update(required_role=host_role)
 
-        return super().form_valid(form)
+        return redirect(self.get_success_url())
 
     def get_success_url(self):
-        return reverse("lobbies:lobby-list", kwargs={"game_slug": self.game.slug})
-
-    def dispatch(self, request, *args, **kwargs):
-        game_slug = self.kwargs.get("game_slug")
-        game = get_object_or_404(Game, slug=game_slug)
-
-        if request.user.is_authenticated and not request.user.game_profiles.filter(game=game).exists():
-            messages.warning(
-                request,
-                f"You need to set up your <b>{game.title}</b> profile before creating a lobby."
-            )
-            return redirect("games:profile-create")
-
-        return super().dispatch(request, *args, **kwargs)
+        return reverse("lobbies:lobby-detail", kwargs={
+            "game_slug": self.game.slug,
+            "invite_link": self.object.invite_link
+        })
 
 
 class LobbyDetailView(generic.DetailView):

@@ -40,7 +40,9 @@ class LobbyForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
 
         if self.game:
-            self.fields["host_role"].queryset = GameRole.objects.filter(game=self.game)
+            self.fields["host_role"].queryset = GameRole.objects.filter(
+                game=self.game
+            ).select_related("game")
 
             max_size = min(self.game.team_size * 2, 20)
 

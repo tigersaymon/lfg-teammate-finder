@@ -5,6 +5,8 @@ from lobbies.models import Lobby
 
 @admin.register(Lobby)
 class LobbyAdmin(admin.ModelAdmin):
+    list_select_related = ["host", "game"]
+
     list_display = [
         "title",
         "host",

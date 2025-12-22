@@ -15,6 +15,8 @@ class UserAdmin(UserAdmin):
         "date_joined"
     ]
 
+    ordering = ["-date_joined"]
+
     list_filter = [
         "is_staff",
         "is_active",

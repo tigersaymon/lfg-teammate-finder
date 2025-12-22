@@ -35,6 +35,7 @@ class GameAdmin(admin.ModelAdmin):
 
 @admin.register(GameRole)
 class UserGameRole(admin.ModelAdmin):
+    list_select_related = ["game"]
     list_display = ["order", "name", "game", "created_at"]
     list_filter = ["game"]
     search_fields = ["name", "game__title"]

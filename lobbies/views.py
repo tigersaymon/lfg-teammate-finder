@@ -168,9 +168,12 @@ class LobbyDetailView(generic.DetailView):
 
     def get_queryset(self):
         return super().get_queryset().select_related(
-            "game", "host"
+            "host", "game"
         ).prefetch_related(
-            "slots__player"
+            "slots__player",
+            "slots__required_role"
+        ).annotate(
+            filled_slots_count=Count("slots", filter=Q(slots__player__isnull=False))
         )
 
     def get_context_data(self, **kwargs):

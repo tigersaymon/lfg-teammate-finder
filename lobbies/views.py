@@ -2,7 +2,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db import transaction
 from django.db.models import Count, Q, F
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseForbidden
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
 from django.views import generic, View
@@ -227,6 +227,39 @@ class LeaveSlotView(LoginRequiredMixin, SlotActionMixin, View):
                     "slot": slot,
                     "lobby": lobby,
                     "user": request.user
+                })
+
+        return self._redirect_to_lobby(game_slug, invite_link)
+
+
+class KickPlayerView(LoginRequiredMixin, SlotActionMixin, View):
+    def post(self, request, game_slug, invite_link, slot_id):
+        with transaction.atomic():
+            slot = get_object_or_404(
+                Slot.objects.select_related("lobby", "player"),
+                id=slot_id,
+                lobby__invite_link=invite_link
+            )
+            lobby = slot.lobby
+
+            if request.user != lobby.host:
+                return HttpResponseForbidden("You are not the host.")
+
+            if slot.player == request.user:
+                return HttpResponse(status=204)
+
+            kicked_user_name = slot.player.username
+            slot.player = None
+            slot.save()
+
+            messages.success(request, f"Kicked {kicked_user_name} from the lobby.")
+
+            if request.headers.get("HX-Request"):
+                return render(request, "lobbies/partials/slot_card.html", {
+                    "slot": slot,
+                    "lobby": lobby,
+                    "user": request.user,
+                    "profile": None
                 })
 
         return self._redirect_to_lobby(game_slug, invite_link)

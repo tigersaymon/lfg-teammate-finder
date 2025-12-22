@@ -55,7 +55,7 @@
       {% endif %}
     {% else %}
 
-      {% if user == slot.player %}
+      {% if user == slot.player and user != lobby.host %}
         <button class="btn btn-sm btn-outline-warning"
                 hx-post="{% url 'lobbies:lobby-leave' lobby.game.slug lobby.invite_link slot.id %}"
                 hx-swap="outerHTML"
@@ -63,6 +63,15 @@
           Leave
         </button>
       {% endif %}
+    {% endif %}
+    {% if user == lobby.host and slot.player != user %}
+      <button class="btn btn-sm btn-outline-danger"
+              hx-post="{% url 'lobbies:lobby-kick' lobby.game.slug lobby.invite_link slot.id %}"
+              hx-confirm="Are you sure you want to kick {{ slot.player.username }}?"
+              hx-swap="outerHTML"
+              hx-target="closest .list-group-item">
+        <i class="bi bi-x-lg"></i> Kick
+      </button>
     {% endif %}
   </div>
 </div>

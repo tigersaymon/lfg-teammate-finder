@@ -5,7 +5,7 @@ from .views import (
     LobbyDetailView,
     LobbyDeleteView,
     JoinSlotView,
-    LeaveSlotView
+    LeaveSlotView, KickPlayerView
 )
 
 app_name = "lobbies"
@@ -17,4 +17,5 @@ urlpatterns = [
     path("<slug:game_slug>/<uuid:invite_link>/delete/", LobbyDeleteView.as_view(), name="lobby-delete"),
     path("<slug:game_slug>/<uuid:invite_link>/join/<int:slot_id>/", JoinSlotView.as_view(), name="lobby-join"),
     path("<slug:game_slug>/<uuid:invite_link>/leave/<int:slot_id>/", LeaveSlotView.as_view(), name="lobby-leave"),
+    path("<slug:game_slug>/<uuid:invite_link>/kick/<int:slot_id>/", KickPlayerView.as_view(), name="lobby-kick"),
 ]

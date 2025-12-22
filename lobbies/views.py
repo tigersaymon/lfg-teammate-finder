@@ -27,11 +27,23 @@ class LobbyListView(generic.ListView):
     def get_queryset(self):
         game_slug = self.kwargs.get("game_slug")
         self.game = get_object_or_404(Game, slug=game_slug)
+        user = self.request.user
 
         queryset = Lobby.objects.filter(
             game=self.game,
             status=Lobby.Status.SEARCHING
-        ).select_related(
+        )
+
+        if user.is_authenticated:
+            queryset = queryset.filter(
+                Q(is_public=True) |
+                Q(host=user) |
+                Q(slots__player=user)
+            ).distinct()
+        else:
+            queryset = queryset.filter(is_public=True)
+
+        queryset = queryset.select_related(
             "host", "game"
         ).annotate(
             filled_slots_count=Count("slots", filter=Q(slots__player__isnull=False))
@@ -48,7 +60,7 @@ class LobbyListView(generic.ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["game"] = self.game
-        context["games"] = Game.objects.all()
+        # context["games"] = Game.objects.all()
         return context
 
 
@@ -111,6 +123,18 @@ class LobbyDetailView(generic.DetailView):
             "slots__player",
             "slots__required_role"
         )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        lobby = self.object
+
+        if self.request.user.is_authenticated:
+            player_ids = lobby.slots.values_list("player_id", flat=True)
+            context["user_is_in_lobby"] = self.request.user.id in player_ids
+        else:
+            context["user_is_in_lobby"] = False
+
+        return context
 
 
 class LobbyDeleteView(LoginRequiredMixin, UserPassesTestMixin, generic.DeleteView):
@@ -263,3 +287,19 @@ class KickPlayerView(LoginRequiredMixin, SlotActionMixin, View):
                 })
 
         return self._redirect_to_lobby(game_slug, invite_link)
+
+
+class ToggleLobbyPrivacyView(LoginRequiredMixin, View):
+    def post(self, request, game_slug, invite_link):
+        lobby = get_object_or_404(Lobby, invite_link=invite_link, host=request.user)
+
+        lobby.is_public = not lobby.is_public
+        lobby.save()
+
+        status_msg = "Lobby is now PUBLIC" if lobby.is_public else "Lobby is now PRIVATE"
+        messages.success(request, status_msg)
+
+        return render(request, "lobbies/partials/lobby_controls.html", {
+            "lobby": lobby,
+            "user": request.user
+        })

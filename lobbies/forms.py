@@ -14,7 +14,7 @@ class LobbyForm(forms.ModelForm):
     )
     class Meta:
         model = Lobby
-        fields = ["title", "description", "size"]
+        fields = ["title", "description", "size", "communication_link", "is_public"]
 
         widgets = {
             "title": forms.TextInput(attrs={
@@ -27,7 +27,12 @@ class LobbyForm(forms.ModelForm):
             }),
             "size": forms.NumberInput(attrs={
                 "class": "form-control",
-            })
+            }),
+            "communication_link": forms.URLInput(attrs={
+                "class": "form-control",
+                "placeholder": "https://discord.gg/..."
+            }),
+            "is_public": forms.CheckboxInput(attrs={"class": "form-check-input"}),
         }
 
     def __init__(self, *args, **kwargs):

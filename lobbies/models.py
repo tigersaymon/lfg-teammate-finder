@@ -23,6 +23,7 @@ class Lobby(models.Model):
     description = models.TextField(max_length=500, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    is_public = models.BooleanField(default=True)
 
     size = models.PositiveIntegerField(
         default=5,
@@ -36,6 +37,12 @@ class Lobby(models.Model):
         default=uuid.uuid4,
         unique=True,
         editable=False
+    )
+
+    communication_link = models.URLField(
+        max_length=200,
+        blank=True,
+        help_text="Link to Discord, TeamSpeak, or in-game party invite."
     )
 
     host = models.ForeignKey(

@@ -1,0 +1,36 @@
+<div id="lobby-controls" class="d-flex gap-2 align-items-center">
+
+  {% if lobby.is_public %}
+    <span class="badge bg-success" title="Visible in lobby list">
+            <i class="bi bi-globe"></i> Public
+        </span>
+  {% else %}
+    <span class="badge bg-warning text-dark" title="Hidden from list (Link only)">
+            <i class="bi bi-eye-slash"></i> Private
+        </span>
+  {% endif %}
+
+  {% if user == lobby.host %}
+
+    <button class="btn btn-sm {% if lobby.is_public %}btn-outline-warning{% else %}btn-outline-success{% endif %}"
+            hx-post="{% url 'lobbies:lobby-toggle-privacy' lobby.game.slug lobby.invite_link %}"
+            hx-target="#lobby-controls"
+            hx-swap="outerHTML">
+      {% if lobby.is_public %}
+        <i class="bi bi-lock-fill"></i> Make Private
+      {% else %}
+        <i class="bi bi-unlock-fill"></i> Make Public
+      {% endif %}
+    </button>
+
+    <button class="btn btn-sm btn-outline-primary"
+            onclick="navigator.clipboard.writeText(window.location.href).then(() => alert('Link copied!'))">
+      <i class="bi bi-link-45deg"></i> Copy Link
+    </button>
+    <a href="{% url 'lobbies:lobby-delete' lobby.game.slug lobby.invite_link %}"
+       class="btn btn-sm btn-outline-danger">
+      <i class="bi bi-trash"></i> Delete
+    </a>
+
+  {% endif %}
+</div>

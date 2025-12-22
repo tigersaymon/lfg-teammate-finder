@@ -1,5 +1,7 @@
 {% extends "base.html" %}
-{% load game_extras %} {% block content %}
+{% load game_extras %}
+
+{% block content %}
   <div class="d-flex justify-content-between align-items-start mb-4">
     <div>
       <h1>{{ lobby.title }}</h1>
@@ -10,17 +12,43 @@
       </div>
     </div>
 
-    {% if user == lobby.host %}
-      <a href="{% url 'lobbies:lobby-delete' lobby.game.slug lobby.invite_link %}" class="btn btn-outline-danger">
-        <i class="bi bi-trash"></i> Delete Lobby
-      </a>
-    {% endif %}
+    {% include "lobbies/partials/lobby_controls.html" %}
   </div>
 
   <div class="card mb-4">
     <div class="card-body">
       <h5 class="card-title">Description</h5>
       <p class="card-text">{{ lobby.description|default:"No description provided." }}</p>
+
+      {% if lobby.communication_link %}
+        <hr>
+        {% if user == lobby.host or user_is_in_lobby %}
+
+          <div class="alert alert-success d-flex align-items-center" role="alert">
+            <i class="bi bi-discord fs-4 me-3"></i>
+            <div>
+              <strong>Communication Link:</strong><br>
+              <a href="{{ lobby.communication_link }}" target="_blank" class="alert-link">
+                {{ lobby.communication_link }}
+              </a>
+              <div class="small text-muted mt-1">
+                Use this link to join the voice channel or party.
+              </div>
+            </div>
+          </div>
+
+        {% else %}
+
+          <div class="alert alert-secondary d-flex align-items-center" role="alert">
+            <i class="bi bi-lock-fill fs-4 me-3"></i>
+            <div>
+              <strong>Hidden Link</strong><br>
+              <span class="text-muted">Join a slot to reveal the invite link.</span>
+            </div>
+          </div>
+
+        {% endif %}
+      {% endif %}
     </div>
   </div>
 
@@ -28,18 +56,18 @@
 
   <h3>Slots ({{ lobby.filled_slots_count }}/{{ lobby.size }})</h3>
 
-<div class="list-group">
+  <div class="list-group">
     {% for slot in lobby.slots.all %}
 
-        {% if slot.player %}
-            {% get_player_profile slot.player lobby.game as player_profile %}
-            {% include "lobbies/partials/slot_card.html" with slot=slot profile=player_profile %}
-        {% else %}
-            {% include "lobbies/partials/slot_card.html" with slot=slot profile=None %}
-        {% endif %}
+      {% if slot.player %}
+        {% get_player_profile slot.player lobby.game as player_profile %}
+        {% include "lobbies/partials/slot_card.html" with slot=slot profile=player_profile %}
+      {% else %}
+        {% include "lobbies/partials/slot_card.html" with slot=slot profile=None %}
+      {% endif %}
 
     {% endfor %}
-</div>
+  </div>
 
   <div class="mt-4">
     <a href="{% url 'lobbies:lobby-list' lobby.game.slug %}" class="btn btn-outline-secondary">

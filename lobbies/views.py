@@ -16,6 +16,9 @@ from lobbies.models import Lobby, Slot
 
 
 class HTMXRedirect(HttpResponse):
+    """
+    Custom response to trigger a client-side redirect via HTMX.
+    """
     def __init__(self, redirect_to: str, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self["HX-Redirect"] = redirect_to
@@ -23,6 +26,12 @@ class HTMXRedirect(HttpResponse):
 
 
 class LobbyListView(generic.ListView):
+    """
+    Displays a list of active lobbies for a specific game.
+
+    Includes complex filtering logic for roles and availability,
+    and optimizes database queries with subqueries and prefetching.
+    """
     model = Lobby
     context_object_name = "lobbies"
     paginate_by = 10
@@ -32,11 +41,13 @@ class LobbyListView(generic.ListView):
         self.game = get_object_or_404(Game, slug=game_slug)
         user = self.request.user
 
+        # show lobby for a specific game
         queryset = Lobby.objects.filter(
             game=self.game,
             status=Lobby.Status.SEARCHING
         )
 
+        # lobby visibility if user authenticated (privacy)
         if user.is_authenticated:
             queryset = queryset.filter(
                 Q(is_public=True) |
@@ -46,15 +57,17 @@ class LobbyListView(generic.ListView):
         else:
             queryset = queryset.filter(is_public=True)
 
+        # filter by selected role
         role_id = self.request.GET.get("role")
         if role_id:
             queryset = queryset.filter(
-                slots__player__isnull=True
+                slots__player__isnull=True # only empty slots
             ).filter(
-                Q(slots__required_role_id=role_id) |
-                Q(slots__required_role__isnull=True)
+                Q(slots__required_role_id=role_id) | # specific role
+                Q(slots__required_role__isnull=True) # any role
             ).distinct()
 
+        # count occupied slots using OuterRef to correlate with the main Lobby query
         filled_slots_subquery = Slot.objects.filter(
             lobby=OuterRef("pk"),
             player__isnull=False
@@ -62,10 +75,10 @@ class LobbyListView(generic.ListView):
             count=Count("id")
         ).values("count")
 
-        queryset = queryset.select_related(
+        queryset = queryset.select_related(     # using to prevent N+1
             "host", "game"
-        ).annotate(
-            filled_slots_count=Coalesce(
+        ).annotate(     # attach the subquery result to each Lobby instance
+            filled_slots_count=Coalesce(    # use Coalesce to convert NULL (no players) into 0
                 Subquery(filled_slots_subquery),
                 0,
                 output_field=IntegerField()
@@ -73,7 +86,7 @@ class LobbyListView(generic.ListView):
         ).prefetch_related(
             "slots__player",
             "slots__required_role",
-            Prefetch(
+            Prefetch(    # fetch the host's profile ONLY for the current game and store in cache
                 "host__game_profiles",
                 queryset=UserGameProfile.objects.filter(game=self.game),
                 to_attr="host_profile_cache"
@@ -98,6 +111,12 @@ class LobbyListView(generic.ListView):
 
 
 class LobbyCreateView(LoginRequiredMixin, generic.CreateView):
+    """
+    Handles the creation of a new lobby.
+
+    Validates that the user has a game profile before allowing creation.
+    Automatically assigns roles to slots based on form input.
+    """
     model = Lobby
     form_class = LobbyForm
     template_name = "lobbies/lobby_form.html"
@@ -107,6 +126,7 @@ class LobbyCreateView(LoginRequiredMixin, generic.CreateView):
         self.game = get_object_or_404(Game, slug=self.kwargs.get("game_slug"))
 
     def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        # check if user have profile for the game
         if request.user.is_authenticated and not request.user.game_profiles.filter(game=self.game).exists():
             messages.warning(
                 request,
@@ -133,10 +153,12 @@ class LobbyCreateView(LoginRequiredMixin, generic.CreateView):
         with transaction.atomic():
             self.object = form.save()
 
+            # assign host to the first slot
             host_role = form.cleaned_data.get("host_role")
             if host_role:
                 self.object.slots.filter(order=1).update(required_role=host_role)
 
+            # assign roles to slots by order
             needed_roles = form.cleaned_data.get("needed_roles")
             if needed_roles:
                 empty_slots = list(
@@ -169,9 +191,15 @@ class LobbyDetailView(generic.DetailView):
     slug_field = "invite_link"
 
     def get_queryset(self) -> QuerySet[Lobby]:
+        """
+        Displays the lobby dashboard.
+
+        Fetches all necessary related data (slots, players, profiles) to
+        minimize database queries when rendering the lobby grid.
+        """
         return super().get_queryset().select_related(
             "host", "game"
-        ).prefetch_related(
+        ).prefetch_related( # N + 1 problem solving
             "slots__player",
             "slots__required_role"
         ).annotate(
@@ -182,6 +210,7 @@ class LobbyDetailView(generic.DetailView):
         context = super().get_context_data(**kwargs)
         lobby = self.object
 
+        # optimization: get profiles only for players currently in slots
         player_ids = [slot.player.id for slot in lobby.slots.all() if slot.player]
 
         profiles = UserGameProfile.objects.filter(
@@ -200,6 +229,9 @@ class LobbyDetailView(generic.DetailView):
 
 
 class LobbyDeleteView(LoginRequiredMixin, UserPassesTestMixin, generic.DeleteView):
+    """
+    Allows the host to delete (cancel) the lobby.
+    """
     model = Lobby
     template_name = "lobbies/lobby_confirm_delete.html"
     slug_url_kwarg = "invite_link"
@@ -211,6 +243,7 @@ class LobbyDeleteView(LoginRequiredMixin, UserPassesTestMixin, generic.DeleteVie
         return self._cached_object
 
     def test_func(self) -> bool:
+        """Ensures only the host can delete the lobby."""
         return self.get_object().host == self.request.user
 
     def get_success_url(self) -> str:
@@ -221,7 +254,13 @@ class LobbyDeleteView(LoginRequiredMixin, UserPassesTestMixin, generic.DeleteVie
 
 
 class SlotActionMixin:
+    """
+    Helper mixin for slot manipulation views.
+    Provides methods for locking slots and handling redirects/errors.
+    """
+
     def _get_locked_slot(self, slot_id: int, invite_link: str) -> Slot:
+        """ Fetches a slot with SELECT FOR UPDATE to prevent race conditions. """
         return get_object_or_404(
             Slot.objects.select_for_update().select_related('lobby'),
             id=slot_id,
@@ -242,6 +281,11 @@ class SlotActionMixin:
         game_slug: str,
         invite_link: str
     ) -> HttpResponse:
+        """
+        Sends an error message.
+        If HTMX request, returns a special redirect header to reload the page.
+        """
+
         messages.error(request, message)
 
         if request.headers.get("HX-Request"):
@@ -255,6 +299,11 @@ class SlotActionMixin:
 
 
 class JoinSlotView(LoginRequiredMixin, SlotActionMixin, View):
+    """
+    Handles a user's request to occupy a specific slot.
+    Uses database locking to prevent two users from taking the same slot simultaneously.
+    """
+
     def post(
         self,
         request: HttpRequest,
@@ -277,6 +326,7 @@ class JoinSlotView(LoginRequiredMixin, SlotActionMixin, View):
 
                 return redirect("games:profile-create")
 
+            # validation to join (lobby status, user already joined, ...)
             can_join, reason = lobby.can_join(request.user)
             if not can_join:
                 return self._handle_error(request, reason, game_slug, invite_link)
@@ -305,6 +355,10 @@ class JoinSlotView(LoginRequiredMixin, SlotActionMixin, View):
 
 
 class LeaveSlotView(LoginRequiredMixin, SlotActionMixin, View):
+    """
+    Allows a user to leave their slot.
+    """
+
     def post(
             self,
             request: HttpRequest,
@@ -340,6 +394,10 @@ class LeaveSlotView(LoginRequiredMixin, SlotActionMixin, View):
 
 
 class KickPlayerView(LoginRequiredMixin, SlotActionMixin, View):
+    """
+    Allows the host to remove a player from a slot.
+    """
+
     def post(
             self,
             request: HttpRequest,
@@ -379,6 +437,10 @@ class KickPlayerView(LoginRequiredMixin, SlotActionMixin, View):
 
 
 class ToggleLobbyPrivacyView(LoginRequiredMixin, View):
+    """
+    HTMX view to toggle lobby visibility (Public/Private).
+    """
+
     def post(
             self,
             request: HttpRequest,

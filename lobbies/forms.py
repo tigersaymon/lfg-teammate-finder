@@ -5,18 +5,28 @@ from .models import Lobby
 
 
 class LobbyForm(forms.ModelForm):
+    """
+    Form for creating a new lobby.
+
+    Dynamically adjusts fields based on the selected 'Game'.
+    Allows the host to select their own role and optional roles for other slots.
+    """
     host_role = forms.ModelChoiceField(
         queryset=GameRole.objects.none(),
         required=False,
         label="Your role",
         empty_label="Flex",
-        widget=forms.Select(attrs={"class": "form-select"})
+        widget=forms.Select(attrs={
+            "class": "form-select"
+        })
     )
     needed_roles = forms.ModelMultipleChoiceField(
         queryset=GameRole.objects.none(),
         required=False,
         label="Looking for (Optional)",
-        widget=forms.CheckboxSelectMultiple(attrs={"class": "d-flex gap-3 flex-wrap list-unstyled mb-0"})
+        widget=forms.CheckboxSelectMultiple(attrs={
+            "class": "d-flex gap-3 flex-wrap list-unstyled mb-0"
+        })
     )
 
     class Meta:
@@ -39,10 +49,18 @@ class LobbyForm(forms.ModelForm):
                 "class": "form-control",
                 "placeholder": "https://discord.gg/..."
             }),
-            "is_public": forms.CheckboxInput(attrs={"class": "form-check-input"}),
+            "is_public": forms.CheckboxInput(attrs={
+                "class": "form-check-input"
+            }),
         }
 
     def __init__(self, *args, **kwargs) -> None:
+        """
+        Initializes the form with game-specific configuration.
+
+        Args:
+            game (Game): Passed via kwargs to filter roles and set size limits.
+        """
         self.game = kwargs.pop("game", None)
         super().__init__(*args, **kwargs)
 
@@ -52,10 +70,12 @@ class LobbyForm(forms.ModelForm):
             self.fields["host_role"].queryset = roles
             self.fields["needed_roles"].queryset = roles
 
+            # setup choices for manual choosing when creating a lobby
             role_choices = [(role.id, role.name) for role in roles]
             self.fields["host_role"].choices = [("", "Flex")] + role_choices
             self.fields["needed_roles"].choices = role_choices
 
+            # min/max players limits
             max_size = min(self.game.team_size * 2, 20)
             self.fields["size"].widget.attrs.update({
                 "min": 2,
@@ -65,6 +85,7 @@ class LobbyForm(forms.ModelForm):
             self.fields["size"].help_text = f"Standard for {self.game.title}: {self.game.team_size} players."
 
     def clean_size(self) -> int:
+        """Validates that the lobby size is within acceptable limits for the game."""
         size = self.cleaned_data["size"]
         if self.game and size > self.game.team_size * 2:
             raise forms.ValidationError(f"Too many players for {self.game.title}")

@@ -8,6 +8,13 @@ from django.utils.translation import gettext_lazy as _
 
 
 class Lobby(models.Model):
+    """
+    Represents a game session (room) created by a host.
+
+    Acts as a container for 'Slots'. When a lobby is created, it automatically
+    generates the required number of slots based on the 'size' field.
+    """
+
     class Status(models.TextChoices):
         SEARCHING = "SE", _("Searching")
         IN_PROGRESS = "IP", _("In progress")
@@ -67,6 +74,12 @@ class Lobby(models.Model):
         return f"{self.title} ({self.game.title})"
 
     def save(self, *args, **kwargs) -> None:
+        """
+        Saves the lobby and triggers slot generation for new instances.
+
+        Uses an atomic transaction to ensure that a lobby is never created
+        without its corresponding slots.
+        """
         is_new = self.pk is None
         with transaction.atomic():
             super().save(*args, **kwargs)
@@ -75,6 +88,10 @@ class Lobby(models.Model):
                 self._create_slots()
 
     def _create_slots(self) -> None:
+        """
+        Generates empty slots and assigns the first one to the host.
+        Uses bulk_create for database performance optimization.
+        """
         slots = []
 
         for i in range(1, self.size + 1):
@@ -82,6 +99,7 @@ class Lobby(models.Model):
 
         Slot.objects.bulk_create(slots)
 
+        # assign first slot to the host immediately
         first_slot = self.slots.get(order=1)
         first_slot.player = self.host
         first_slot.save()
@@ -90,6 +108,9 @@ class Lobby(models.Model):
         return f"/lobbies/join/{self.invite_link}/"
 
     def can_join(self, user: Any) -> Tuple[bool, str]:
+        """
+        Checks if a specific user is allowed to join the lobby.
+        """
         if self.status != self.Status.SEARCHING:
             return False, "Lobby is not accepting players"
 
@@ -103,6 +124,9 @@ class Lobby(models.Model):
 
     @property
     def filled_count(self) -> int:
+        """
+        Returns the number of slots currently occupied by players.
+        """
         return self.slots.filter(player__isnull=False).count()
 
     @property
@@ -111,6 +135,12 @@ class Lobby(models.Model):
 
 
 class Slot(models.Model):
+    """
+    Represents a single player spot within a Lobby.
+
+    A slot can be open (Any role), reserved for a specific role,
+    or occupied by a player.
+    """
     order = models.PositiveIntegerField()
     joined_at = models.DateTimeField(null=True, blank=True)
 
@@ -149,6 +179,9 @@ class Slot(models.Model):
         return f"Slot {self.order}: {player_str} ({role_str})"
 
     def save(self, *args, **kwargs) -> None:
+        """
+        Auto-updates 'joined_at' timestamp and checks Lobby fullness status.
+        """
         from django.utils import timezone
 
         if self.player and not self.joined_at:
@@ -158,6 +191,7 @@ class Slot(models.Model):
 
         super().save(*args, **kwargs)
 
+        # trigger lobby status update is last slot is occupied
         if self.lobby.status == Lobby.Status.SEARCHING and self.lobby.is_full:
             self.lobby.status = Lobby.Status.IN_PROGRESS
             self.lobby.save(update_fields=["status"])

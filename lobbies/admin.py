@@ -6,6 +6,13 @@ from lobbies.models import Lobby
 
 @admin.register(Lobby)
 class LobbyAdmin(admin.ModelAdmin):
+    """
+    Read-only focused Admin configuration for Lobbies.
+
+    Lobbies are primarily managed by users, so this interface is mostly
+    for monitoring and moderation. Creation is disabled here to enforce
+    slot generation logic properly via Views/Forms.
+    """
     list_select_related = ["host", "game"]
 
     list_display = [

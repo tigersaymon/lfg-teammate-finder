@@ -1,0 +1,19 @@
+{% extends "settings_base.html" %}
+
+{% block settings_content %}
+  <div class="alert alert-danger">
+    <h4 class="alert-heading"><i class="bi bi-exclamation-triangle-fill"></i> Delete Profile?</h4>
+    <p>
+      Are you sure you want to delete your profile for <strong>{{ object.game.title }}</strong>?
+      This action cannot be undone. You will lose your rank and role information for this game.
+    </p>
+    <hr>
+    <form method="post">
+      {% csrf_token %}
+      <div class="d-flex gap-2 justify-content-end">
+        <a href="{% url 'games:my-profiles' %}" class="btn btn-secondary">Cancel</a>
+        <button type="submit" class="btn btn-danger">Yes, Delete</button>
+      </div>
+    </form>
+  </div>
+{% endblock %}

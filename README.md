@@ -4,7 +4,7 @@
 
 **LFG (Looking For Group)** is a web platform designed to solve the chaos of solo-queue matchmaking. It allows players to find teammates for competitive games like **CS2, Dota 2, and Valorant** by creating structured lobbies with specific roles and rank requirements.
 
-> **Check out the Live Demo:** 
+> **Check out the Live Demo:** https://lfg-teammate-finder.onrender.com/
 
 ---
 

@@ -4,7 +4,18 @@
 
 **LFG (Looking For Group)** is a web platform designed to solve the chaos of solo-queue matchmaking. It allows players to find teammates for competitive games like **CS2, Dota 2, and Valorant** by creating structured lobbies with specific roles and rank requirements.
 
-> **Check out the Live Demo:** https://lfg-teammate-finder.onrender.com/
+> **🚀 Live Demo:** [https://lfg-teammate-finder.onrender.com/](https://lfg-teammate-finder.onrender.com/)
+
+### 🔑 Test Credentials
+
+To test the application properly, you can use these pre-configured accounts:
+
+| Role | Username | Password | Features to Test |
+| :--- | :--- | :--- | :--- |
+| **Admin** 👮‍♂️ | `admin` | `admin12345` | Access to Admin Panel, Manage Users/Lobbies |
+| **Player** 🎮 | `player1` | `PlayerPassword1` | Create Lobbies, Join Teams, Edit Profile |
+
+*(Note: Data on the demo server may be reset periodically)*
 
 ---
 
@@ -90,7 +101,7 @@ python manage.py setup_dev
 ```
 > **What this does:**
 > * Creates games (CS2, Dota 2, Valorant, etc.) and their specific roles.
-> * Creates a Superuser (`admin` / `AdminPassword1`).
+> * Creates a Superuser (`admin` / `admin12345`).
 > * Creates a Test User (`player1` / `PlayerPassword1`).
 > * Creates demo lobbies to populate the list.
 

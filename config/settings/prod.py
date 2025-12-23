@@ -2,7 +2,9 @@ from .base import *
 
 DEBUG = False
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
+RENDER_DOMAIN = os.environ["RENDER_DOMAIN"]
+
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', RENDER_DOMAIN]
 
 # Database
 
@@ -19,3 +21,7 @@ DATABASES = {
    },
  }
 }
+
+SECURE_SSL_REDIRECT = True
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True

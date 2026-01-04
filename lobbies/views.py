@@ -41,13 +41,11 @@ class LobbyListView(generic.ListView):
         self.game = get_object_or_404(Game, slug=game_slug)
         user = self.request.user
 
-        # show lobby for a specific game
         queryset = Lobby.objects.filter(
             game=self.game,
             status=Lobby.Status.SEARCHING
         )
 
-        # lobby visibility if user authenticated (privacy)
         if user.is_authenticated:
             queryset = queryset.filter(
                 Q(is_public=True) |
@@ -57,17 +55,15 @@ class LobbyListView(generic.ListView):
         else:
             queryset = queryset.filter(is_public=True)
 
-        # filter by selected role
         role_id = self.request.GET.get("role")
         if role_id:
             queryset = queryset.filter(
-                slots__player__isnull=True # only empty slots
+                slots__player__isnull=True
             ).filter(
-                Q(slots__required_role_id=role_id) | # specific role
-                Q(slots__required_role__isnull=True) # any role
+                Q(slots__required_role_id=role_id) |
+                Q(slots__required_role__isnull=True)
             ).distinct()
 
-        # count occupied slots using OuterRef to correlate with the main Lobby query
         filled_slots_subquery = Slot.objects.filter(
             lobby=OuterRef("pk"),
             player__isnull=False
@@ -75,10 +71,10 @@ class LobbyListView(generic.ListView):
             count=Count("id")
         ).values("count")
 
-        queryset = queryset.select_related(     # using to prevent N+1
+        queryset = queryset.select_related(
             "host", "game"
-        ).annotate(     # attach the subquery result to each Lobby instance
-            filled_slots_count=Coalesce(    # use Coalesce to convert NULL (no players) into 0
+        ).annotate(
+            filled_slots_count=Coalesce(
                 Subquery(filled_slots_subquery),
                 0,
                 output_field=IntegerField()
@@ -86,7 +82,7 @@ class LobbyListView(generic.ListView):
         ).prefetch_related(
             "slots__player",
             "slots__required_role",
-            Prefetch(    # fetch the host's profile ONLY for the current game and store in cache
+            Prefetch(
                 "host__game_profiles",
                 queryset=UserGameProfile.objects.filter(game=self.game),
                 to_attr="host_profile_cache"
@@ -125,7 +121,6 @@ class LobbyCreateView(LoginRequiredMixin, generic.CreateView):
         self.game = get_object_or_404(Game, slug=self.kwargs.get("game_slug"))
 
     def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
-        # check if user have profile for the game
         if request.user.is_authenticated and not request.user.game_profiles.filter(game=self.game).exists():
             messages.warning(
                 request,
@@ -152,12 +147,10 @@ class LobbyCreateView(LoginRequiredMixin, generic.CreateView):
         with transaction.atomic():
             self.object = form.save()
 
-            # assign host to the first slot
             host_role = form.cleaned_data.get("host_role")
             if host_role:
                 self.object.slots.filter(order=1).update(required_role=host_role)
 
-            # assign roles to slots by order
             needed_roles = form.cleaned_data.get("needed_roles")
             if needed_roles:
                 empty_slots = list(
@@ -197,7 +190,7 @@ class LobbyDetailView(generic.DetailView):
         """
         return super().get_queryset().select_related(
             "host", "game"
-        ).prefetch_related( # N + 1 problem solving
+        ).prefetch_related(
             "slots__player",
             "slots__required_role"
         ).annotate(
@@ -208,7 +201,6 @@ class LobbyDetailView(generic.DetailView):
         context = super().get_context_data(**kwargs)
         lobby = self.object
 
-        # optimization: get profiles only for players currently in slots
         player_ids = [slot.player.id for slot in lobby.slots.all() if slot.player]
 
         profiles = UserGameProfile.objects.filter(
@@ -323,7 +315,6 @@ class JoinSlotView(LoginRequiredMixin, SlotActionMixin, View):
 
                 return redirect("games:profile-create")
 
-            # validation to join (lobby status, user already joined, ...)
             can_join, reason = lobby.can_join(request.user)
             if not can_join:
                 return self._handle_error(request, reason, game_slug, invite_link)

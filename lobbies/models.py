@@ -99,7 +99,6 @@ class Lobby(models.Model):
 
         Slot.objects.bulk_create(slots)
 
-        # assign first slot to the host immediately
         first_slot = self.slots.get(order=1)
         first_slot.player = self.host
         first_slot.save()
@@ -191,7 +190,6 @@ class Slot(models.Model):
 
         super().save(*args, **kwargs)
 
-        # trigger lobby status update is last slot is occupied
         if self.lobby.status == Lobby.Status.SEARCHING and self.lobby.is_full:
             self.lobby.status = Lobby.Status.IN_PROGRESS
             self.lobby.save(update_fields=["status"])

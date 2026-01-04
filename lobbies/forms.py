@@ -70,12 +70,10 @@ class LobbyForm(forms.ModelForm):
             self.fields["host_role"].queryset = roles
             self.fields["needed_roles"].queryset = roles
 
-            # setup choices for manual choosing when creating a lobby
             role_choices = [(role.id, role.name) for role in roles]
             self.fields["host_role"].choices = [("", "Flex")] + role_choices
             self.fields["needed_roles"].choices = role_choices
 
-            # min/max players limits
             max_size = min(self.game.team_size * 2, 20)
             self.fields["size"].widget.attrs.update({
                 "min": 2,

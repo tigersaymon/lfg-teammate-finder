@@ -58,10 +58,11 @@ class LobbyListView(generic.ListView):
         role_id = self.request.GET.get("role")
         if role_id:
             queryset = queryset.filter(
-                slots__player__isnull=True
-            ).filter(
-                Q(slots__required_role_id=role_id) |
-                Q(slots__required_role__isnull=True)
+                Q(slots__player__isnull=True) &
+                (
+                        Q(slots__required_role_id=role_id) |
+                        Q(slots__required_role__isnull=True)
+                )
             ).distinct()
 
         filled_slots_subquery = Slot.objects.filter(

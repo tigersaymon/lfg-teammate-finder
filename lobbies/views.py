@@ -119,7 +119,6 @@ class LobbyCreateView(LoginRequiredMixin, generic.CreateView):
     """
     model = Lobby
     form_class = LobbyForm
-    template_name = "lobbies/lobby_form.html"
 
     def setup(self, request: HttpRequest, *args: Any, **kwargs: Any) -> None:
         super().setup(request, *args, **kwargs)
@@ -186,7 +185,6 @@ class LobbyCreateView(LoginRequiredMixin, generic.CreateView):
 
 class LobbyDetailView(generic.DetailView):
     model = Lobby
-    context_object_name = "lobby"
     slug_url_kwarg = "invite_link"
     slug_field = "invite_link"
 
@@ -233,7 +231,6 @@ class LobbyDeleteView(LoginRequiredMixin, UserPassesTestMixin, generic.DeleteVie
     Allows the host to delete (cancel) the lobby.
     """
     model = Lobby
-    template_name = "lobbies/lobby_confirm_delete.html"
     slug_url_kwarg = "invite_link"
     slug_field = "invite_link"
 

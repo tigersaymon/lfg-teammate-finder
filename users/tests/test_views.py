@@ -6,8 +6,8 @@ from django.urls import reverse
 User = get_user_model()
 
 
-class UserAuthTest(TestCase):
-    """Test suite for user registration and authentication logic."""
+class UserAuthViewTest(TestCase):
+    """Test suite for user registration and authentication views."""
 
     def setUp(self) -> None:
         self.signup_url = reverse("users:sign-up")
@@ -19,22 +19,23 @@ class UserAuthTest(TestCase):
         }
 
     def test_sign_up_successful(self) -> None:
-        """Verifies that a user can register with valid data."""
+        """Verifies that a user can register with valid data via the view."""
         response = self.client.post(self.signup_url, self.user_data)
         self.assertEqual(response.status_code, 302)
         self.assertTrue(User.objects.filter(username="Bob").exists())
 
     def test_signup_duplicate_email_fails(self) -> None:
-        """Verifies that the custom clean_email validation prevents duplicate emails."""
-        User.objects.create_user(username="new_bob", email="bob@example.com", password="password")
+        """Verifies that the view handles duplicate email registration correctly."""
+        User.objects.create_user(username="new_bob", email="bob@example.com",
+                                 password="password")
         response = self.client.post(self.signup_url, self.user_data)
 
         self.assertEqual(response.status_code, 200)
         self.assertFormError(response, "form", "email", "Email already exists")
 
 
-class UserSettingTest(TestCase):
-    """Test suite for user profile management features."""
+class UserSettingsViewTest(TestCase):
+    """Test suite for user profile settings views."""
 
     def setUp(self) -> None:
         self.user = User.objects.create_user(
@@ -53,10 +54,10 @@ class UserSettingTest(TestCase):
         self.assertIn(reverse("login"), response.url)
 
     def test_settings_update_successful(self) -> None:
-        """Verifies that a user can update their bio and discord tag."""
+        """Verifies that a user can update their bio and discord tag via the view."""
         updated_data = {
             "username": "SuperBob",
-            "email": "settings@example.com", # Disabled but sent in post
+            "email": "settings@example.com",
             "bio": "New awesome bio",
             "discord_tag": "user#1111"
         }
@@ -70,8 +71,8 @@ class UserSettingTest(TestCase):
         self.assertEqual(len(messages), 1)
         self.assertEqual(str(messages[0]), "Profile updated successfully!")
 
-    def test_email_field_is_read_only(self) -> None:
-        """Verifies that email cannot be changed through the settings form."""
+    def test_email_field_is_ignored_in_view(self) -> None:
+        """Verifies that email cannot be changed through the settings view (read-only logic)."""
         initial_email = self.user.email
         updated_data = {
             "username": "CoolBob",

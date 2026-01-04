@@ -16,7 +16,11 @@ class LobbyCreateTest(TestCase):
     @classmethod
     def setUpTestData(cls):
         cls.game = Game.objects.create(title="CS2", slug="cs2", team_size=5)
-        cls.role = GameRole.objects.create(game=cls.game, name="Sniper", order=1)
+        cls.role = GameRole.objects.create(
+            game=cls.game,
+            name="Sniper",
+            order=1
+        )
 
     def setUp(self):
         self.user = User.objects.create_user(
@@ -37,7 +41,8 @@ class LobbyCreateTest(TestCase):
         )
         self.client.force_login(no_profile_user)
 
-        url = reverse("lobbies:lobby-create", kwargs={"game_slug": self.game.slug})
+        url = reverse("lobbies:lobby-create",
+                      kwargs={"game_slug": self.game.slug})
         response = self.client.get(url)
 
         self.assertRedirects(response, reverse("games:profile-create"))
@@ -48,7 +53,8 @@ class LobbyCreateTest(TestCase):
         and assigns the host to the first slot.
         """
         self.client.force_login(self.user)
-        url = reverse("lobbies:lobby-create", kwargs={"game_slug": self.game.slug})
+        url = reverse("lobbies:lobby-create",
+                      kwargs={"game_slug": self.game.slug})
 
         data = {
             "title": "Test Lobby",
@@ -78,7 +84,11 @@ class LobbyVisibilityTests(TestCase):
 
     @classmethod
     def setUpTestData(cls):
-        cls.game = Game.objects.create(title="Dota 2", slug="dota2", team_size=5)
+        cls.game = Game.objects.create(
+            title="Dota 2",
+            slug="dota2",
+            team_size=5
+        )
 
     def setUp(self):
         self.host = User.objects.create_user(
@@ -91,7 +101,11 @@ class LobbyVisibilityTests(TestCase):
             email="other@ex.com",
             password="pw"
         )
-        UserGameProfile.objects.create(user=self.host, game=self.game, rank="Immortal")
+        UserGameProfile.objects.create(
+            user=self.host,
+            game=self.game,
+            rank="Immortal"
+        )
 
         self.private_lobby = Lobby.objects.create(
             title="Private Room",
@@ -104,7 +118,8 @@ class LobbyVisibilityTests(TestCase):
     def test_private_lobby_hidden_for_others(self):
         """Private lobbies should not appear in the list for non-members."""
         self.client.force_login(self.other)
-        url = reverse("lobbies:lobby-list", kwargs={"game_slug": self.game.slug})
+        url = reverse("lobbies:lobby-list",
+                      kwargs={"game_slug": self.game.slug})
 
         response = self.client.get(url)
 
@@ -113,7 +128,8 @@ class LobbyVisibilityTests(TestCase):
     def test_private_lobby_visible_for_host(self):
         """Host should always see their own private lobby."""
         self.client.force_login(self.host)
-        url = reverse("lobbies:lobby-list", kwargs={"game_slug": self.game.slug})
+        url = reverse("lobbies:lobby-list",
+                      kwargs={"game_slug": self.game.slug})
 
         response = self.client.get(url)
 
@@ -127,7 +143,11 @@ class SlotActionTests(TestCase):
 
     @classmethod
     def setUpTestData(cls):
-        cls.game = Game.objects.create(title="Valorant", slug="val", team_size=5)
+        cls.game = Game.objects.create(
+            title="Valorant",
+            slug="val",
+            team_size=5
+        )
 
     def setUp(self):
         self.host = User.objects.create_user(
@@ -135,17 +155,28 @@ class SlotActionTests(TestCase):
             email="h@ex.com",
             password="pw"
         )
-        UserGameProfile.objects.create(user=self.host, game=self.game, rank="Radiant")
+        UserGameProfile.objects.create(
+            user=self.host,
+            game=self.game,
+            rank="Radiant"
+        )
 
         self.player = User.objects.create_user(
             username="player",
             email="p@ex.com",
             password="pw"
         )
-        UserGameProfile.objects.create(user=self.player, game=self.game, rank="Gold")
+        UserGameProfile.objects.create(
+            user=self.player,
+            game=self.game,
+            rank="Gold"
+        )
 
         self.lobby = Lobby.objects.create(
-            title="Ranked", game=self.game, host=self.host, size=5
+            title="Ranked",
+            game=self.game,
+            host=self.host,
+            size=5
         )
 
         self.slot_2 = self.lobby.slots.get(order=2)
@@ -205,7 +236,7 @@ class SlotActionTests(TestCase):
         })
 
         response = self.client.post(url)
-        self.assertEqual(response.status_code, 403)  # Forbidden
+        self.assertEqual(response.status_code, 403)
 
         self.client.force_login(self.host)
         response = self.client.post(url)

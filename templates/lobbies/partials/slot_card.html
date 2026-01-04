@@ -1,0 +1,112 @@
+<div
+    class="list-group-item p-3 border-secondary border-opacity-25 bg-dark bg-opacity-10 text-white d-flex align-items-center justify-content-between mb-2 rounded"
+    style="border: 1px solid #2d2f36;">
+
+  <div class="d-flex align-items-center gap-3">
+
+    <span class="text-secondary fw-bold font-monospace small">#{{ forloop.counter }}</span>
+
+    {% if slot.player %}
+      <div class="d-flex align-items-center">
+        {% if slot.player.avatar %}
+          <img src="{{ slot.player.avatar.url }}" class="rounded-circle border border-secondary me-3" width="40"
+               height="40" style="object-fit: cover;">
+        {% else %}
+          <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center me-3"
+               style="width: 40px; height: 40px;">
+            <i class="bi bi-person-fill text-white fs-5"></i>
+          </div>
+        {% endif %}
+
+        <div>
+          <div class="d-flex align-items-center gap-2">
+            <span class="fw-bold">{{ slot.player.username }}</span>
+
+            {% if slot.player == user %}
+              <span class="badge bg-primary py-1 px-2" style="font-size: 0.65rem;">YOU</span>
+            {% endif %}
+
+            {% if slot.player == slot.lobby.host %}
+              <span class="badge bg-warning text-dark py-1 px-2" style="font-size: 0.65rem;">HOST</span>
+            {% endif %}
+          </div>
+
+          {% if profile %}
+            <small class="text-secondary" style="font-size: 0.75rem;">{{ profile.rank }}</small>
+          {% endif %}
+        </div>
+      </div>
+
+    {% else %}
+      <div class="d-flex align-items-center gap-3 opacity-50">
+        <div
+            class="rounded-circle border border-secondary border-dashed d-flex align-items-center justify-content-center"
+            style="width: 40px; height: 40px; border-style: dashed !important;">
+          <i class="bi bi-person text-secondary"></i>
+        </div>
+
+        <div>
+          <span class="text-secondary fw-semibold">Empty Slot</span>
+          <div class="d-flex gap-1 mt-1">
+            {% if slot.required_role %}
+              <span class="badge border border-secondary text-secondary fw-normal bg-transparent">
+                  {{ slot.required_role.name }} Only
+              </span>
+            {% else %}
+              <span class="badge border border-secondary text-secondary fw-normal bg-transparent">Flex / Any</span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+
+  <div class="d-flex align-items-center gap-2">
+
+    {% if not slot.player and user.is_authenticated and not user_is_in_lobby %}
+      <form action="{% url 'lobbies:lobby-join' slot.lobby.game.slug slot.lobby.invite_link slot.id %}" method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-sm btn-success px-3">Join</button>
+      </form>
+    {% endif %}
+
+    {% if user == slot.lobby.host and slot.player and slot.player != user %}
+      <button type="button"
+              class="btn btn-sm btn-outline-danger"
+              data-bs-toggle="modal"
+              data-bs-target="#kickModal{{ slot.id }}">
+        <i class="bi bi-x-lg"></i> Kick
+      </button>
+
+      <div class="modal fade" id="kickModal{{ slot.id }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content bg-dark text-white border-secondary">
+            <div class="modal-header border-secondary">
+              <h5 class="modal-title">Kick Player?</h5>
+              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              Are you sure you want to kick <strong>{{ slot.player.username }}</strong>?
+            </div>
+            <div class="modal-footer border-secondary">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+              <form action="{% url 'lobbies:lobby-kick' slot.lobby.game.slug slot.lobby.invite_link slot.id %}"
+                    method="post">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger">Confirm Kick</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+
+    {% if slot.player == user %}
+      <form action="{% url 'lobbies:lobby-leave' slot.lobby.game.slug slot.lobby.invite_link slot.id %}" method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-sm btn-outline-danger px-3">Leave</button>
+      </form>
+    {% endif %}
+
+  </div>
+</div>

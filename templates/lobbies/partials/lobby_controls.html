@@ -1,0 +1,55 @@
+<div id="lobby-controls" class="d-flex flex-wrap gap-2 align-items-center">
+
+  {% if lobby.is_public %}
+    <div
+        class="d-flex align-items-center text-success border border-success border-opacity-25 bg-success bg-opacity-10 px-3 py-2 rounded-pill small fw-bold me-2"
+        title="Visible to everyone">
+      <i class="bi bi-globe me-2"></i> Public
+    </div>
+  {% else %}
+    <div
+        class="d-flex align-items-center text-warning border border-warning border-opacity-25 bg-warning bg-opacity-10 px-3 py-2 rounded-pill small fw-bold me-2"
+        title="Link access only">
+      <i class="bi bi-lock-fill me-2"></i> Private
+    </div>
+  {% endif %}
+
+  {% if user == lobby.host %}
+
+    <button class="btn btn-sm btn-dark border-secondary d-flex align-items-center gap-2"
+            style="background-color: #2d2f36;"
+            hx-post="{% url 'lobbies:lobby-toggle-privacy' lobby.game.slug lobby.invite_link %}"
+            hx-target="#lobby-controls"
+            hx-swap="outerHTML">
+      {% if lobby.is_public %}
+        <i class="bi bi-eye-slash-fill text-warning"></i> <span>Make Private</span>
+      {% else %}
+        <i class="bi bi-eye-fill text-success"></i> <span>Make Public</span>
+      {% endif %}
+    </button>
+
+    <button class="btn btn-sm btn-dark border-secondary d-flex align-items-center gap-2"
+            style="background-color: #2d2f36;"
+            onclick="navigator.clipboard.writeText(window.location.href);
+                     let icon = this.querySelector('i');
+                     let text = this.querySelector('span');
+                     let originalIcon = icon.className;
+                     let originalText = text.innerText;
+
+                     icon.className = 'bi bi-check-lg text-success';
+                     text.innerText = 'Copied!';
+
+                     setTimeout(() => {
+                        icon.className = originalIcon;
+                        text.innerText = originalText;
+                     }, 2000);">
+      <i class="bi bi-share-fill text-primary"></i> <span>Share</span>
+    </button>
+
+    <a href="{% url 'lobbies:lobby-delete' lobby.game.slug lobby.invite_link %}"
+       class="btn btn-sm btn-outline-danger d-flex align-items-center gap-2 border-opacity-50">
+      <i class="bi bi-trash3-fill"></i>
+    </a>
+
+  {% endif %}
+</div>

@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% load game_extras %}
+
+{% block content %}
+  <div class="d-flex justify-content-between align-items-start mb-4">
+    <div>
+      <div class="d-flex align-items-center gap-2 mb-2">
+           <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25">
+               {{ lobby.game.title }}
+           </span>
+        {% if not lobby.is_public %}
+          <span class="badge bg-warning text-dark"><i class="bi bi-lock-fill"></i> Private</span>
+        {% endif %}
+      </div>
+      <h1 class="display-6 fw-bold text-white mb-1">{{ lobby.title }}</h1>
+      <div class="text-secondary small">
+        <i class="bi bi-clock"></i> Created {{ lobby.created_at|timesince }} ago
+        <span class="mx-2">|</span>
+        <i class="bi bi-person-circle"></i> Host: <strong class="text-light">{{ lobby.host.username }}</strong>
+      </div>
+    </div>
+
+    {% include "lobbies/partials/lobby_controls.html" %}
+  </div>
+
+  <div class="card mb-4 bg-dark bg-opacity-25 border-secondary border-opacity-25 shadow-sm">
+    <div class="card-body">
+      <h6 class="card-subtitle mb-2 text-muted text-uppercase fw-bold small">Description</h6>
+      <p class="card-text text-light">{{ lobby.description|default:"No description provided." }}</p>
+
+      {% if lobby.communication_link %}
+        <hr class="border-secondary opacity-25">
+        {% if user == lobby.host or user_is_in_lobby %}
+
+          <div
+              class="alert alert-success bg-success bg-opacity-10 border-success border-opacity-25 text-white d-flex align-items-center"
+              role="alert">
+            <i class="bi bi-discord fs-3 me-3"></i>
+            <div>
+              <strong class="text-success-emphasis">Communication Link:</strong><br>
+              <a href="{{ lobby.communication_link }}" target="_blank"
+                 class="alert-link text-decoration-underline text-white">
+                {{ lobby.communication_link }}
+              </a>
+              <div class="small opacity-75 mt-1">
+                Use this link to join the voice channel.
+              </div>
+            </div>
+          </div>
+
+        {% else %}
+
+          <div class="alert alert-dark border-secondary d-flex align-items-center text-secondary" role="alert">
+            <i class="bi bi-lock-fill fs-4 me-3"></i>
+            <div>
+              <strong>Hidden Link</strong><br>
+              <span class="small">Join a slot to reveal the invite link.</span>
+            </div>
+          </div>
+
+        {% endif %}
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <h3 class="fw-bold text-white mb-0">
+      Slots
+      <span class="text-secondary fs-5">
+            ( <span class="text-primary">{{ lobby.filled_slots_count }}</span> / {{ lobby.size }} )
+          </span>
+    </h3>
+
+    <div class="progress bg-secondary bg-opacity-25" style="width: 150px; height: 8px;">
+      <div class="progress-bar bg-primary" role="progressbar"
+           style="width: {% widthratio lobby.filled_slots_count lobby.size 100 %}%;"></div>
+    </div>
+  </div>
+
+  <div class="list-group">
+    {% for slot in lobby.slots.all %}
+
+      {% if slot.player %}
+        {% with player_profile=profiles_dict|get_item:slot.player.id %}
+          {% include "lobbies/partials/slot_card.html" with slot=slot profile=player_profile %}
+        {% endwith %}
+      {% else %}
+        {% include "lobbies/partials/slot_card.html" with slot=slot profile=None %}
+      {% endif %}
+
+    {% endfor %}
+  </div>
+
+  <div class="mt-4">
+    <a href="{% url 'lobbies:lobby-list' lobby.game.slug %}" class="btn btn-outline-secondary border-0 text-white-50">
+      <i class="bi bi-arrow-left me-1"></i> Back to {{ lobby.game.title }} Lobbies
+    </a>
+  </div>
+
+{% endblock %}

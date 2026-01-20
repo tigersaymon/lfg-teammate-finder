@@ -1,0 +1,71 @@
+{% extends "settings_base.html" %}
+
+{% block settings_content %}
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="mb-0">My Game Profiles</h3>
+    <a href="{% url 'games:profile-create' %}" class="btn btn-primary">
+      <i class="bi bi-plus-lg"></i> Add Game
+    </a>
+  </div>
+
+  {% if profiles %}
+    <div class="row g-3">
+      {% for profile in profiles %}
+        <div class="col-md-12">
+          <div class="card border h-100">
+            <div class="card-body d-flex align-items-center">
+
+              <div class="flex-shrink-0 me-3">
+                {% if profile.game.icon %}
+                  <img src="{{ profile.game.icon.url }}" alt="{{ profile.game.title }}"
+                       class="rounded" style="width: 64px; height: 64px; object-fit: cover;">
+                {% else %}
+                  <div class="bg-light rounded d-flex align-items-center justify-content-center"
+                       style="width: 64px; height: 64px;">
+                    <i class="bi bi-controller fs-2 text-muted"></i>
+                  </div>
+                {% endif %}
+              </div>
+
+              <div class="flex-grow-1">
+                <h5 class="mb-1">{{ profile.game.title }}</h5>
+                <div class="text-muted small mb-1">
+                  <span class="fw-bold text-dark">Rank:</span> {{ profile.rank }}
+                </div>
+                {% if profile.main_role %}
+                  <div class="text-muted small">
+                    <span class="fw-bold text-dark">Role:</span>
+                    {% if profile.main_role.icon_class %}
+                      <i class="{{ profile.main_role.icon_class }}"></i>
+                    {% endif %}
+                    {{ profile.main_role.name }}
+                  </div>
+                {% endif %}
+              </div>
+
+              <div class="d-flex gap-2">
+                <a href="{% url 'games:profile-edit' profile.game.slug %}"
+                   class="btn btn-outline-secondary btn-sm">
+                  <i class="bi bi-pencil"></i> Edit
+                </a>
+                <a href="{% url 'games:profile-delete' profile.game.slug %}"
+                   class="btn btn-outline-danger btn-sm">
+                  <i class="bi bi-trash"></i>
+                </a>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="text-center py-5">
+      <i class="bi bi-controller display-1 text-muted opacity-25"></i>
+      <p class="lead mt-3">You haven't added any games yet.</p>
+      <a href="{% url 'games:profile-create' %}" class="btn btn-outline-primary">
+        Start by adding a game
+      </a>
+    </div>
+  {% endif %}
+{% endblock %}

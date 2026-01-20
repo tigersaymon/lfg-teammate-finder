@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="fw-bold mb-0 text-white">Lobbies <span class="text-secondary fs-4">/ {{ game.title }}</span></h1>
+    </div>
+    <a href="{% url 'lobbies:lobby-create' game.slug %}" class="btn btn-primary">
+      <i class="bi bi-plus-lg me-1"></i> Create Lobby
+    </a>
+  </div>
+
+  <div class="card mb-4 border border-secondary border-opacity-25 bg-dark bg-opacity-25 shadow-sm">
+    <div class="card-body py-3">
+      <div class="d-flex gap-2 align-items-center flex-wrap">
+        <span class="text-secondary small fw-bold text-uppercase me-2"><i class="bi bi-funnel-fill me-1"></i> Filter:</span>
+
+        <a href="?available_only={{ request.GET.available_only }}"
+           class="btn btn-sm {% if not current_role_id %}btn-filter-active shadow{% else %}btn-outline-secondary{% endif %} rounded-pill px-3 border-0">
+          All
+        </a>
+
+        {% for role in roles %}
+          <a href="?role={{ role.id }}&available_only={{ request.GET.available_only }}"
+             class="btn btn-sm {% if current_role_id == role.id %}btn-filter-active shadow{% else %}btn-outline-secondary{% endif %} rounded-pill d-flex align-items-center gap-2 border-0">
+            {% if role.icon_class %}
+                <i class="{{ role.icon_class }}"></i>
+            {% elif role.icon %}
+                <img src="{{ role.icon.url }}" alt="" style="width: 14px; height: 14px;">
+            {% endif %}
+            {{ role.name }}
+          </a>
+        {% endfor %}
+
+        <div class="vr mx-2 text-secondary"></div>
+
+        <form method="get" class="d-flex align-items-center">
+          {% if current_role_id %}
+            <input type="hidden" name="role" value="{{ current_role_id }}">
+          {% endif %}
+          <div class="form-check form-switch mb-0">
+            <input class="form-check-input bg-secondary border-0" type="checkbox" name="available_only" id="availableCheck"
+                   onchange="this.form.submit()" {% if request.GET.available_only %}checked{% endif %}>
+            <label class="form-check-label small text-secondary" for="availableCheck">Available only</label>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="list-group">
+    {% for lobby in lobbies %}
+      <a href="{% url 'lobbies:lobby-detail' game.slug lobby.invite_link %}"
+         class="list-group-item list-group-item-action p-3 mb-2 rounded shadow-sm border-start border-4 border-secondary border-opacity-25 bg-dark bg-opacity-50 text-white {% if lobby.host == user %}border-primary{% else %}border-secondary{% endif %}"
+         style="border-color: #2d2f36;"
+         aria-current="true">
+
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+              {% if not lobby.is_public %}
+                <i class="bi bi-lock-fill text-warning" title="Private Lobby"></i>
+              {% endif %}
+              <h5 class="mb-0 fw-bold">{{ lobby.title }}</h5>
+            </div>
+
+            <div class="d-flex align-items-center mt-2">
+              {% if lobby.host.avatar %}
+                <img src="{{ lobby.host.avatar.url }}" class="rounded-circle me-2 border border-secondary" width="24" height="24">
+              {% else %}
+                <i class="bi bi-person-circle text-secondary me-2 fs-5"></i>
+              {% endif %}
+
+              <span class="text-secondary small me-2">Hosted by <strong class="text-light">{{ lobby.host.username }}</strong></span>
+
+              {% if lobby.host.host_profile_cache %}
+                <span class="badge bg-secondary bg-opacity-25 text-light border border-secondary" style="font-size: 0.75rem;">
+                    {{ lobby.host.host_profile_cache.0.rank }}
+                </span>
+              {% endif %}
+            </div>
+          </div>
+
+          <small class="text-secondary">{{ lobby.created_at|timesince }} ago</small>
+        </div>
+
+        {% if lobby.description %}
+          <p class="mb-3 text-secondary small text-truncate" style="max-width: 85%;">
+            {{ lobby.description }}
+          </p>
+        {% else %}
+          <div class="mb-3"></div>
+        {% endif %}
+
+        <div class="d-flex justify-content-between align-items-end border-top border-secondary border-opacity-25 pt-2 mt-2">
+
+          <div>
+            <small class="text-secondary d-block mb-1 text-uppercase fw-bold" style="font-size: 0.7rem;">Looking for:</small>
+            <div class="d-flex gap-1">
+              {% for slot in lobby.slots.all %}
+                {% if not slot.player %}
+                  <div class="position-relative"
+                       title="{% if slot.required_role %}Need: {{ slot.required_role.name }}{% else %}Flex / Any{% endif %}"
+                       data-bs-toggle="tooltip">
+
+                    {% if slot.required_role %}
+                      {% if slot.required_role.icon_class %}
+                        <div class="rounded border border-secondary d-flex align-items-center justify-content-center text-light bg-secondary bg-opacity-10"
+                             style="width: 32px; height: 32px;">
+                          <i class="{{ slot.required_role.icon_class }} fs-6"></i>
+                        </div>
+
+                      {% elif slot.required_role.icon %}
+                        <img src="{{ slot.required_role.icon.url }}" class="rounded border border-secondary p-1 bg-secondary bg-opacity-10"
+                             style="width: 32px; height: 32px;">
+
+                      {% else %}
+                        <div class="rounded border border-secondary d-flex align-items-center justify-content-center text-secondary fw-bold small bg-secondary bg-opacity-10"
+                            style="width: 32px; height: 32px;">
+                          {{ slot.required_role.name|slice:":1" }}
+                        </div>
+                      {% endif %}
+
+                    {% else %}
+                      <div class="rounded border border-secondary d-flex align-items-center justify-content-center text-secondary bg-secondary bg-opacity-10"
+                           style="width: 32px; height: 32px;">
+                        <i class="bi bi-question-lg"></i>
+                      </div>
+                    {% endif %}
+                  </div>
+                {% endif %}
+              {% endfor %}
+
+              {% if lobby.filled_slots_count == lobby.size %}
+                <span class="badge bg-success d-flex align-items-center" style="height: 32px;">Full Squad <i
+                    class="bi bi-check-all ms-1"></i></span>
+              {% endif %}
+            </div>
+          </div>
+
+           <div class="text-end">
+                <span class="badge {% if lobby.filled_slots_count == lobby.size %}bg-success{% else %}bg-primary{% endif %} rounded-pill fs-6">
+                    {{ lobby.filled_slots_count }} / {{ lobby.size }}
+                </span>
+            </div>
+        </div>
+
+      </a>
+    {% empty %}
+      <div class="text-center py-5">
+        <div class="text-muted mb-3 opacity-25"><i class="bi bi-joystick fs-1"></i></div>
+        <h3 class="text-white">No lobbies found</h3>
+        <p class="text-secondary">Try changing filters or create a new one!</p>
+        {% if current_role_id or request.GET.available_only %}
+          <a href="?" class="btn btn-outline-primary mt-2">Clear Filters</a>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+{% endblock %}

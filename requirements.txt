@@ -1,0 +1,14 @@
+Django==4.2.27
+python-dotenv
+Pillow
+cloudinary
+django-cloudinary-storage
+django-crispy-forms>=2.0
+crispy-bootstrap5
+django-bootstrap-v5
+django-debug-toolbar
+requests
+gunicorn
+whitenoise
+dj-database-url
+psycopg2-binary
